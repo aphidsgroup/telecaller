@@ -35,10 +35,10 @@ export default function LoginForm({ next = '' }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="card space-y-4 p-6">
+    <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <label className="label" htmlFor="email">
-          Email
+          Email address
         </label>
         <input
           id="email"

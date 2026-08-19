@@ -25,7 +25,9 @@ body {
            disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800;
+    @apply btn bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-[0_10px_28px_-10px_rgba(252,110,32,0.55)] 
+           hover:-translate-y-px hover:shadow-[0_14px_32px_-10px_rgba(252,110,32,0.65)] 
+           active:translate-y-0 active:shadow-sm;
   }
   .btn-ghost {
     @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50;
@@ -34,11 +36,11 @@ body {
     @apply btn bg-rose-600 text-white hover:bg-rose-700;
   }
   .input {
-    @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm outline-none
-           focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-slate-100 disabled:text-slate-400;
+    @apply w-full rounded-xl border-[1.5px] border-slate-200 bg-white px-4 py-3 text-[15px] font-medium text-slate-800 outline-none transition-all
+           focus:border-brand-500 focus:shadow-[0_0_0_3px_rgba(252,110,32,0.12)] disabled:bg-slate-50 disabled:text-slate-400;
   }
   .label {
-    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply mb-1.5 block text-[12.5px] font-bold text-slate-600;
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
