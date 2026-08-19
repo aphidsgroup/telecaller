@@ -54,7 +54,7 @@ function parseSheetDate(value) {
 }
 
 /** Turn a raw sheet row (array or object) into our lead shape. */
-export function normaliseRow(row, headerMap, rowNumber) {
+export function normaliseRow(row, headerMap, rowNumber, headerRow = []) {
   const pick = (field) => {
     if (Array.isArray(row)) {
       const idx = headerMap[field];
@@ -67,6 +67,16 @@ export function normaliseRow(row, headerMap, rowNumber) {
   };
   const clean = (v) => String(v ?? '').trim() || null;
 
+  const extraData = {};
+  if (Array.isArray(row) && headerRow.length > 0) {
+    const mappedIndexes = new Set(Object.values(headerMap));
+    for (let i = 0; i < headerRow.length; i++) {
+      if (!mappedIndexes.has(i) && headerRow[i] && row[i]) {
+        extraData[headerRow[i]] = String(row[i]).trim();
+      }
+    }
+  }
+
   return {
     rowNumber,
     name: clean(pick('name')) || 'Unnamed lead',
@@ -78,6 +88,7 @@ export function normaliseRow(row, headerMap, rowNumber) {
     budget: clean(pick('budget')),
     notes: clean(pick('notes')),
     dateAdded: parseSheetDate(pick('dateAdded')),
+    extraData: Object.keys(extraData).length > 0 ? extraData : null,
   };
 }
 
@@ -88,6 +99,7 @@ export function normaliseRow(row, headerMap, rowNumber) {
  */
 export async function ingestRows({
   rows,
+  headerRow = [],
   headerMap = null,
   source = IMPORT_SOURCE.MANUAL,
   spreadsheetId = null,
@@ -110,7 +122,7 @@ export async function ingestRows({
     for (const item of rows) {
       // items are either { row, rowNumber } (Sheets API) or a bare object (webhook)
       const raw = item && item.row !== undefined ? item.row : item;
-      const lead = normaliseRow(raw, headerMap, item?.rowNumber);
+      const lead = normaliseRow(raw, headerMap, item?.rowNumber, headerRow);
 
       const sourceRow = sheetTab && lead.rowNumber ? `${sheetTab}!${lead.rowNumber}` : null;
       const externalKey =
@@ -190,6 +202,7 @@ export async function ingestRows({
           city: lead.city,
           budget: lead.budget,
           notes: lead.notes,
+          extraData: lead.extraData,
           dateAdded: lead.dateAdded,
           score,
           priority: score >= 55 ? 1 : 0,
@@ -323,6 +336,7 @@ export async function syncFromGoogleSheet({ triggeredById = null, companyId = nu
   return ingestRows({
     rows,
     headerMap,
+    headerRow: values[0],
     source: IMPORT_SOURCE.SHEETS_API,
     spreadsheetId: id,
     sheetTab: tab,

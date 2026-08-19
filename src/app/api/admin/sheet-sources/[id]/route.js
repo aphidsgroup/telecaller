@@ -36,9 +36,16 @@ async function deleteSource(req, { params }) {
   const { id } = params;
 
   try {
-    await prisma.sheetSource.delete({
-      where: { id },
-    });
+    const source = await prisma.sheetSource.findUnique({ where: { id } });
+    if (source) {
+      const prefix = `${source.spreadsheetId}:${source.sheetTab || 'default'}:`;
+      await prisma.lead.deleteMany({
+        where: { externalKey: { startsWith: prefix } },
+      });
+      await prisma.sheetSource.delete({
+        where: { id },
+      });
+    }
     return ok({ success: true });
   } catch (err) {
     if (err.code === 'P2025') return fail(404, 'SheetSource not found');

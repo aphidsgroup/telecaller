@@ -5,7 +5,7 @@ import { ASSIGNMENT_MODE, EVENT, HELD_STATUSES, LEAD_STATUS, ROLE } from './cons
 
 const LEAD_SELECT = {
   id: true, name: true, phone: true, altPhone: true, source: true, project: true,
-  city: true, budget: true, notes: true, dateAdded: true, status: true, priority: true,
+  city: true, budget: true, notes: true, extraData: true, dateAdded: true, status: true, priority: true,
   score: true, isDnd: true, assignedToId: true, assignedAt: true, servedAt: true,
   callClickedAt: true, inProgressAt: true, lastContactedAt: true, followUpAt: true,
   attemptCount: true, lastCallCategory: true, lastLeadStatus: true, createdAt: true,

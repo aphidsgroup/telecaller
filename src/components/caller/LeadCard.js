@@ -70,6 +70,9 @@ export default function LeadCard({ lead, tz }) {
         <Field label="Source" value={lead.source} icon={Globe} />
         {lead.altPhone ? <Field label="Alt. phone" value={displayPhone(lead.altPhone)} icon={Phone} /> : null}
         {lead.dateAdded ? <Field label="Added" value={formatDateTime(lead.dateAdded, tz)} icon={Calendar} /> : null}
+        {lead.extraData && Object.entries(lead.extraData).map(([key, value]) => (
+          <Field key={key} label={key} value={value} />
+        ))}
       </div>
 
       {/* Notes */}

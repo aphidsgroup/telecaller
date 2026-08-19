@@ -92,6 +92,7 @@ model Lead {
   city      String?
   budget    String?
   notes     String? // notes that came in from the sheet
+  extraData Json?   // stores any unmapped sheet columns
   dateAdded DateTime? // "Date Added" column from the sheet
   status    String    @default("UNASSIGNED") // UNASSIGNED|ASSIGNED|ACTIVE|IN_PROGRESS|SCHEDULED|CLOSED
   priority  Int       @default(0) // higher = jumps the FIFO queue
