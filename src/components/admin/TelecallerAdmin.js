@@ -115,7 +115,7 @@ export default function TelecallerAdmin() {
             </select>
           </div>
           <div>
-            <label className="label">Temp password</label>
+            <label className="label">Password</label>
             <input
               className="input"
               value={form.password}
