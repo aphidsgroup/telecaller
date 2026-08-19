@@ -9,15 +9,16 @@ export const GET = route(async () => {
   await requireAdmin();
   const users = await prisma.user.findMany({
     where: { role: ROLE.TELECALLER },
-    select: { id: true, name: true, email: true, isActive: true, dailyTarget: true, lastSeenAt: true },
+    select: { id: true, name: true, email: true, isActive: true, dailyTarget: true, lastSeenAt: true, companyId: true, company: { select: { name: true } } },
     orderBy: { name: 'asc' },
   });
-  return ok({ users });
+  const companies = await prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } });
+  return ok({ users, companies });
 });
 
 export const POST = route(async (req) => {
   await requireAdmin();
-  const { name, email, password, phone, role = ROLE.TELECALLER, dailyTarget = 60 } = await readJson(req);
+  const { name, email, password, phone, role = ROLE.TELECALLER, dailyTarget = 60, companyId = null } = await readJson(req);
   if (!name || !email || !password) return fail(400, 'Name, email and password are required');
   if (String(password).length < 6) return fail(400, 'Password must be at least 6 characters');
 
@@ -33,8 +34,9 @@ export const POST = route(async (req) => {
       role: role === ROLE.ADMIN ? ROLE.ADMIN : ROLE.TELECALLER,
       dailyTarget: Number(dailyTarget) || 60,
       passwordHash: await hashPassword(String(password)),
+      companyId: companyId || null,
     },
-    select: { id: true, name: true, email: true, role: true, isActive: true, dailyTarget: true },
+    select: { id: true, name: true, email: true, role: true, isActive: true, dailyTarget: true, companyId: true },
   });
   return ok({ user });
 });

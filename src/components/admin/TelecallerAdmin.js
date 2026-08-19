@@ -8,6 +8,7 @@ const BLANK = { name: '', email: '', phone: '', password: '', dailyTarget: 60 };
 export default function TelecallerAdmin() {
   const router = useRouter();
   const [users, setUsers] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [form, setForm] = useState(BLANK);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -15,7 +16,10 @@ export default function TelecallerAdmin() {
 
   async function refresh() {
     const data = await fetch('/api/admin/telecallers').then((r) => r.json());
-    if (data.ok) setUsers(data.users);
+    if (data.ok) {
+      setUsers(data.users);
+      if (data.companies) setCompanies(data.companies);
+    }
   }
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export default function TelecallerAdmin() {
       </div>
 
       {open ? (
-        <form onSubmit={create} className="mt-4 grid gap-3 border-t border-slate-100 pt-4 md:grid-cols-5">
+        <form onSubmit={create} className="mt-4 grid gap-3 border-t border-slate-100 pt-4 md:grid-cols-6">
           <div>
             <label className="label">Name</label>
             <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
@@ -102,6 +106,15 @@ export default function TelecallerAdmin() {
             <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
           </div>
           <div>
+            <label className="label">Company</label>
+            <select className="input" value={form.companyId || ''} onChange={(e) => setForm({ ...form, companyId: e.target.value || null })}>
+              <option value="">(None)</option>
+              {companies.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
             <label className="label">Temp password</label>
             <input
               className="input"
@@ -116,7 +129,7 @@ export default function TelecallerAdmin() {
             <div className="flex gap-2">
               <input
                 type="number"
-                className="input"
+                className="input min-w-0"
                 value={form.dailyTarget}
                 onChange={(e) => setForm({ ...form, dailyTarget: e.target.value })}
               />
@@ -129,58 +142,77 @@ export default function TelecallerAdmin() {
       ) : null}
 
       {users.length ? (
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+        <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4">
           {users.map((u) => (
-            <div key={u.id} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-sm">
-              <span className={u.isActive ? 'text-slate-800' : 'text-slate-400 line-through'}>{u.name}</span>
-              <button
-                className="text-xs font-semibold text-slate-500 underline"
-                disabled={busy}
-                onClick={() => patch(u.id, { isActive: !u.isActive }, `${u.name} ${u.isActive ? 'deactivated' : 'reactivated'}`)}
-              >
-                {u.isActive ? 'Deactivate' : 'Activate'}
-              </button>
-              <button
-                className="text-xs font-semibold text-slate-500 underline"
-                disabled={busy}
-                onClick={() => {
-                  const email = window.prompt(`New email for ${u.name}`, u.email);
-                  if (email && email.trim() !== u.email) patch(u.id, { email: email.trim() }, 'Email updated');
-                }}
-              >
-                Change email
-              </button>
-              <button
-                className="text-xs font-semibold text-slate-500 underline"
-                disabled={busy}
-                onClick={() => {
-                  const password = window.prompt(`New password for ${u.name} (min 6 characters)`);
-                  if (password && password.length >= 6) patch(u.id, { password }, 'Password reset');
-                }}
-              >
-                Reset password
-              </button>
-              <button
-                className="text-xs font-semibold text-rose-500 underline ml-2"
-                disabled={busy}
-                onClick={async () => {
-                  if (window.confirm(`Are you sure you want to permanently delete ${u.name}? This will delete their past call logs too.`)) {
-                    setBusy(true);
-                    try {
-                      const res = await fetch(`/api/admin/telecallers/${u.id}`, { method: 'DELETE' });
-                      if (!res.ok) throw new Error('Delete failed');
-                      setMessage(`${u.name} deleted.`);
-                      await refresh();
-                    } catch (e) {
-                      setMessage(e.message);
-                    } finally {
-                      setBusy(false);
+            <div key={u.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <div className="flex items-center gap-2 font-semibold">
+                <span className={u.isActive ? 'text-slate-800' : 'text-slate-400 line-through'}>{u.name}</span>
+                {u.company ? (
+                  <span className="chip bg-brand-50 text-brand-600 text-[10px]">{u.company.name}</span>
+                ) : (
+                  <span className="chip bg-slate-100 text-slate-500 text-[10px]">No company</span>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-3 ml-auto text-xs font-semibold">
+                <button
+                  className="text-slate-500 hover:underline"
+                  disabled={busy}
+                  onClick={() => patch(u.id, { isActive: !u.isActive }, `${u.name} ${u.isActive ? 'deactivated' : 'reactivated'}`)}
+                >
+                  {u.isActive ? 'Deactivate' : 'Activate'}
+                </button>
+                <select
+                  className="bg-transparent text-slate-500 font-semibold focus:outline-none cursor-pointer"
+                  value={u.companyId || ''}
+                  onChange={(e) => patch(u.id, { companyId: e.target.value || null }, `Assigned ${u.name} to company`)}
+                  disabled={busy}
+                >
+                  <option value="">Set company...</option>
+                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <button
+                  className="text-slate-500 hover:underline"
+                  disabled={busy}
+                  onClick={() => {
+                    const email = window.prompt(`New email for ${u.name}`, u.email);
+                    if (email && email.trim() !== u.email) patch(u.id, { email: email.trim() }, 'Email updated');
+                  }}
+                >
+                  Change email
+                </button>
+                <button
+                  className="text-slate-500 hover:underline"
+                  disabled={busy}
+                  onClick={() => {
+                    const password = window.prompt(`New password for ${u.name} (min 6 characters)`);
+                    if (password && password.length >= 6) patch(u.id, { password }, 'Password reset');
+                  }}
+                >
+                  Reset password
+                </button>
+                <button
+                  className="text-rose-500 hover:underline"
+                  disabled={busy}
+                  onClick={async () => {
+                    if (window.confirm(`Are you sure you want to permanently delete ${u.name}? This will delete their past call logs too.`)) {
+                      setBusy(true);
+                      try {
+                        const res = await fetch(`/api/admin/telecallers/${u.id}`, { method: 'DELETE' });
+                        if (!res.ok) throw new Error('Delete failed');
+                        setMessage(`${u.name} deleted.`);
+                        await refresh();
+                      } catch (e) {
+                        setMessage(e.message);
+                      } finally {
+                        setBusy(false);
+                      }
                     }
-                  }
-                }}
-              >
-                Delete
-              </button>
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
         </div>

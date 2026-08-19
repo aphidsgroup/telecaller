@@ -26,6 +26,7 @@ function buildWhere(params) {
     ];
   }
   if (params.status) where.status = params.status;
+  if (params.companyId) where.companyId = params.companyId;
   if (params.telecaller === 'none') where.assignedToId = null;
   else if (params.telecaller) where.assignedToId = params.telecaller;
   if (params.source) where.source = params.source;
@@ -49,13 +50,13 @@ export default async function LeadsPage({ searchParams }) {
   const settings = await getSettings();
   const tz = str(settings, 'company.timezone');
 
-  const [leads, total, telecallers, sources, projects, cities] = await Promise.all([
+  const [leads, total, telecallers, sources, projects, cities, companies] = await Promise.all([
     prisma.lead.findMany({
       where,
       orderBy: [{ updatedAt: 'desc' }],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      include: { assignedTo: { select: { id: true, name: true } } },
+      include: { assignedTo: { select: { id: true, name: true } }, company: { select: { name: true } } },
     }),
     prisma.lead.count({ where }),
     prisma.user.findMany({
@@ -66,6 +67,7 @@ export default async function LeadsPage({ searchParams }) {
     prisma.lead.findMany({ distinct: ['source'], select: { source: true }, take: 60 }),
     prisma.lead.findMany({ distinct: ['project'], select: { project: true }, take: 60 }),
     prisma.lead.findMany({ distinct: ['city'], select: { city: true }, take: 60 }),
+    prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
   ]);
 
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -95,6 +97,7 @@ export default async function LeadsPage({ searchParams }) {
         sources={sources.map((s) => s.source).filter(Boolean)}
         projects={projects.map((p) => p.project).filter(Boolean)}
         cities={cities.map((c) => c.city).filter(Boolean)}
+        companies={companies}
       />
 
       <LeadTable telecallers={telecallers} leads={leads} tz={tz} />

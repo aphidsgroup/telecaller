@@ -93,10 +93,11 @@ export async function ingestRows({
   spreadsheetId = null,
   sheetTab = null,
   triggeredById = null,
+  companyId = null,
   autoDistribute = true,
 }) {
   const log = await prisma.importLog.create({
-    data: { source, spreadsheetId, sheetTab, triggeredById, status: 'RUNNING' },
+    data: { source, spreadsheetId, sheetTab, triggeredById, companyId, status: 'RUNNING' },
   });
 
   let inserted = 0;
@@ -196,6 +197,7 @@ export async function ingestRows({
           importLogId: log.id,
           sourceRow,
           externalKey,
+          companyId,
         },
         select: { id: true },
       });
@@ -275,7 +277,7 @@ function sheetsClient() {
 export const sheetsConfigured = () => Boolean(sheetsClient());
 
 /** Pull the master sheet through Sheets API v4 with a service account. */
-export async function syncFromGoogleSheet({ triggeredById = null } = {}) {
+export async function syncFromGoogleSheet({ triggeredById = null, companyId = null } = {}) {
   const settings = await getSettings();
   const spreadsheetId = str(settings, 'sheets.spreadsheetId') || process.env.GOOGLE_SHEET_ID;
   const sheetTab = str(settings, 'sheets.tab') || process.env.GOOGLE_SHEET_TAB || 'Leads';
@@ -304,6 +306,7 @@ export async function syncFromGoogleSheet({ triggeredById = null } = {}) {
       spreadsheetId,
       sheetTab,
       triggeredById,
+      companyId,
     });
   }
 
@@ -324,5 +327,6 @@ export async function syncFromGoogleSheet({ triggeredById = null } = {}) {
     spreadsheetId,
     sheetTab,
     triggeredById,
+    companyId,
   });
 }

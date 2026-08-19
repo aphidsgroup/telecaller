@@ -12,6 +12,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users       User[]
+  leads       Lead[]
+  importLogs  ImportLog[]
+}
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -25,6 +38,9 @@ model User {
   updatedAt    DateTime  @updatedAt
   lastLoginAt  DateTime?
   lastSeenAt   DateTime?
+
+  companyId    String?
+  company      Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   leads         Lead[]             @relation("assignee")
   dispositions  Disposition[]
@@ -68,6 +84,9 @@ model Lead {
   priority  Int       @default(0) // higher = jumps the FIFO queue
   score     Int       @default(0) // computed lead score
   isDnd     Boolean   @default(false) // TRAI/DND suppression
+
+  companyId     String?
+  company       Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   assignedToId    String?
   assignedTo      User?     @relation("assignee", fields: [assignedToId], references: [id], onDelete: SetNull)
@@ -162,6 +181,9 @@ model ImportLog {
   invalid       Int       @default(0)
   message       String?
   errorDetail   String?
+
+  companyId     String?
+  company       Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   triggeredById String?
   triggeredBy   User?   @relation(fields: [triggeredById], references: [id], onDelete: SetNull)

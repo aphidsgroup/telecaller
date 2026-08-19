@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function SyncPanel({ configured, spreadsheetId, tab, intervalMinutes }) {
+export default function SyncPanel({ configured, spreadsheetId, tab, intervalMinutes, companies = [] }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [link, setLink] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
 
   async function handleStartSync(e) {
     e.preventDefault();
@@ -31,7 +32,11 @@ export default function SyncPanel({ configured, spreadsheetId, tab, intervalMinu
       }
 
       // Now run sync
-      const res = await fetch('/api/admin/sync', { method: 'POST' });
+      const res = await fetch('/api/admin/sync', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId: selectedCompanyId || null })
+      });
       const data = await res.json();
       setResult(
         res.ok && data.ok
@@ -72,18 +77,26 @@ export default function SyncPanel({ configured, spreadsheetId, tab, intervalMinu
         <div className="flex-1 space-y-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-slate-500">Ingestion</h2>
           
-          <form onSubmit={handleStartSync} className="flex gap-2 w-full max-w-lg">
-            <input 
-              type="text" 
-              className="input text-sm flex-1" 
-              placeholder={spreadsheetId ? "Paste new Google Sheet Link..." : "Paste Google Sheet Link here..."}
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
-              disabled={busy}
-            />
-            <button type="submit" className="btn-primary" disabled={busy || (!link && !spreadsheetId)}>
-              {busy ? 'Working...' : 'Start sync'}
-            </button>
+          <form onSubmit={handleStartSync} className="flex flex-col gap-2 w-full max-w-lg">
+            <div className="flex gap-2 w-full">
+              <input 
+                type="text" 
+                className="input text-sm flex-1" 
+                placeholder={spreadsheetId ? "Paste new Google Sheet Link..." : "Paste Google Sheet Link here..."}
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                disabled={busy}
+              />
+              <select className="input text-sm w-48" value={selectedCompanyId} onChange={e => setSelectedCompanyId(e.target.value)} disabled={busy}>
+                <option value="">(No Company)</option>
+                {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <button type="submit" className="btn-primary" disabled={busy || (!link && !spreadsheetId)}>
+                {busy ? 'Working...' : 'Start sync'}
+              </button>
+            </div>
           </form>
 
           <p className="text-sm text-slate-600">

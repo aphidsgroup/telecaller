@@ -39,7 +39,9 @@ export default function StatusBar({ user, online, pending, queue, onSync }) {
           </span>
           <div>
             <p className="text-sm font-bold text-white leading-none">{user.name}</p>
-            <p className="text-[10px] font-semibold text-slate-400 leading-none mt-0.5 uppercase tracking-wider">Telecaller</p>
+            <p className="text-[10px] font-semibold text-slate-400 leading-none mt-0.5 uppercase tracking-wider">
+              {user.company ? user.company.name : 'Telecaller'}
+            </p>
           </div>
         </div>
 

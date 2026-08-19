@@ -6,7 +6,7 @@ import { LEAD_STATUS_CATEGORY, LEAD_STATUS_LABEL } from '@/lib/constants';
 
 const STATUSES = Object.keys(LEAD_STATUS_LABEL);
 
-export default function LeadFilters({ params, telecallers, sources, projects, cities }) {
+export default function LeadFilters({ params, telecallers, sources, projects, cities, companies = [] }) {
   const router = useRouter();
   const search = useSearchParams();
   const [q, setQ] = useState(params.q || '');
@@ -23,13 +23,13 @@ export default function LeadFilters({ params, telecallers, sources, projects, ci
 
   return (
     <form
-      className="card grid gap-3 p-4 md:grid-cols-4"
+      className="card grid gap-3 p-4 md:grid-cols-4 lg:grid-cols-5"
       onSubmit={(e) => {
         e.preventDefault();
         apply({ q });
       }}
     >
-      <div className="md:col-span-2">
+      <div className="md:col-span-2 lg:col-span-2">
         <label className="label">Search</label>
         <input
           className="input"
@@ -57,6 +57,17 @@ export default function LeadFilters({ params, telecallers, sources, projects, ci
           {telecallers.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="label">Company</label>
+        <select className="input" value={params.companyId || ''} onChange={(e) => apply({ companyId: e.target.value })}>
+          <option value="">Any company</option>
+          {companies.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
             </option>
           ))}
         </select>

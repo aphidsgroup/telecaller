@@ -22,8 +22,8 @@ export default async function ImportsPage() {
   const settings = await getSettings();
   const tz = str(settings, 'company.timezone');
 
-  const [logs, duplicates, pendingCount] = await Promise.all([
-    prisma.importLog.findMany({ orderBy: { startedAt: 'desc' }, take: 40, include: { triggeredBy: { select: { name: true } } } }),
+  const [logs, duplicates, pendingCount, companies] = await Promise.all([
+    prisma.importLog.findMany({ orderBy: { startedAt: 'desc' }, take: 40, include: { triggeredBy: { select: { name: true } }, company: { select: { name: true } } } }),
     prisma.duplicateHit.findMany({
       where: { resolution: 'PENDING' },
       orderBy: { createdAt: 'desc' },
@@ -31,6 +31,7 @@ export default async function ImportsPage() {
       include: { existingLead: { select: { id: true, name: true, status: true, assignedToId: true } } },
     }),
     prisma.duplicateHit.count({ where: { resolution: 'PENDING' } }),
+    prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
   ]);
 
   return (
@@ -48,6 +49,7 @@ export default async function ImportsPage() {
         spreadsheetId={str(settings, 'sheets.spreadsheetId')}
         tab={str(settings, 'sheets.tab')}
         intervalMinutes={str(settings, 'sheets.autoSyncMinutes')}
+        companies={companies}
       />
 
       <section>
@@ -81,6 +83,7 @@ export default async function ImportsPage() {
                   <td className="td text-xs">
                     {log.source.replace(/_/g, ' ').toLowerCase()}
                     {log.triggeredBy ? <div className="text-slate-400">by {log.triggeredBy.name}</div> : null}
+                    {log.company ? <div className="text-brand-600 font-semibold mt-0.5">{log.company.name}</div> : null}
                   </td>
                   <td className="td text-xs">{log.sheetTab || '-'}</td>
                   <td className="td">{log.rowsRead}</td>

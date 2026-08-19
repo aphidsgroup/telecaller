@@ -126,7 +126,7 @@ function ruleTargetFor(lead, rules) {
 function activeTelecallers() {
   return prisma.user.findMany({
     where: { role: ROLE.TELECALLER, isActive: true },
-    select: { id: true, name: true },
+    select: { id: true, name: true, companyId: true },
     orderBy: { createdAt: 'asc' },
   });
 }
@@ -159,7 +159,7 @@ export async function distributePool({ actorId = null, limit = 500, modeOverride
     where: { status: LEAD_STATUS.UNASSIGNED, assignedToId: null },
     orderBy: [{ priority: 'desc' }, { score: 'desc' }, { createdAt: 'asc' }],
     take: limit,
-    select: { id: true, city: true, project: true, source: true },
+    select: { id: true, city: true, project: true, source: true, companyId: true },
   });
 
   let assigned = 0;
@@ -167,11 +167,16 @@ export async function distributePool({ actorId = null, limit = 500, modeOverride
 
   for (const lead of pool) {
     let targetId = rules.length ? ruleTargetFor(lead, rules) : null;
-    if (targetId && (loads.get(targetId) ?? 0) >= maxQueue) targetId = null;
+    if (targetId) {
+       const targetUser = callers.find(c => c.id === targetId);
+       if (!targetUser || targetUser.companyId !== lead.companyId || (loads.get(targetId) ?? 0) >= maxQueue) {
+         targetId = null;
+       }
+    }
 
     if (!targetId) {
       const free = callers
-        .filter((c) => (loads.get(c.id) ?? 0) < maxQueue)
+        .filter((c) => (loads.get(c.id) ?? 0) < maxQueue && c.companyId === lead.companyId)
         .sort((a, b) => (loads.get(a.id) ?? 0) - (loads.get(b.id) ?? 0));
       if (!free.length) {
         skipped += 1;
@@ -210,7 +215,8 @@ async function pullOneFromPool(userId, settings) {
   const load = await openQueueCount(userId);
   if (load >= num(settings, 'assignment.maxQueuePerCaller')) return null;
 
-  let where = { status: LEAD_STATUS.UNASSIGNED, assignedToId: null };
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { companyId: true } });
+  let where = { status: LEAD_STATUS.UNASSIGNED, assignedToId: null, companyId: user?.companyId || null };
   if (mode === ASSIGNMENT_MODE.RULES) {
     const rules = await prisma.assignmentRule.findMany({ where: { isActive: true, userId } });
     if (rules.length) {

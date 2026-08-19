@@ -110,6 +110,9 @@ export default function LeadTable({ leads, telecallers, tz }) {
                   <div className="text-xs text-slate-400">
                     {[lead.project, lead.city].filter(Boolean).join(' - ') || 'No project set'}
                   </div>
+                  {lead.company ? (
+                    <div className="text-[10px] font-semibold text-brand-600 uppercase tracking-wide mt-1">{lead.company.name}</div>
+                  ) : null}
                   {lead.flaggedForReview ? (
                     <div className="mt-1 text-xs font-semibold text-rose-600">{lead.flagReason || 'Flagged'}</div>
                   ) : null}

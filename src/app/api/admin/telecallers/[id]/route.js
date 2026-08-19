@@ -16,6 +16,7 @@ export const PATCH = route(async (req, ctx) => {
   if (body.isActive != null) data.isActive = Boolean(body.isActive);
   if (body.dailyTarget != null) data.dailyTarget = Number(body.dailyTarget) || 0;
   if (body.password) data.passwordHash = await hashPassword(String(body.password));
+  if (body.companyId !== undefined) data.companyId = body.companyId || null;
 
   const user = await prisma.user.update({
     where: { id },
