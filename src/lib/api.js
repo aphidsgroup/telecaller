@@ -17,7 +17,7 @@ export function route(handler) {
       if (err instanceof HttpError) return fail(err.status, err.message, err.code ? { code: err.code } : {});
       console.error('[api]', err);
       return fail(500, 'Something went wrong on the server', {
-        detail: process.env.NODE_ENV === 'development' ? String(err?.message || err) : undefined,
+        detail: String(err?.message || err),
       });
     }
   };
