@@ -16,8 +16,8 @@ export default async function LoginPage({ searchParams }) {
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-700 to-brand-900 px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center text-white">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 text-2xl font-bold">
-            B
+          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-lg">
+            <img src="/icon.png" alt="Buildogram Logo" className="h-full w-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold">Buildogram Telecalling</h1>
           <p className="mt-1 text-sm text-brand-100">One lead at a time. Every action timestamped.</p>

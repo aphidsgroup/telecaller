@@ -29,8 +29,8 @@ export default async function AdminLayout({ children }) {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-sm font-bold text-white">
-              B
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white p-1 shadow-sm">
+              <img src="/icon.png" alt="Buildogram Logo" className="h-full w-full object-contain" />
             </span>
             <div>
               <p className="text-sm font-bold leading-tight text-slate-900">Buildogram Telecalling</p>

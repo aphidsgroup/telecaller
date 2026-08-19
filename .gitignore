@@ -7,3 +7,5 @@ out
 prisma/dev.db*
 .DS_Store
 npm-debug.log*
+
+.vercel

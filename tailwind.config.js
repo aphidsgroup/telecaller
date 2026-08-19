@@ -5,9 +5,9 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50: '#eef6ff', 100: '#d9eaff', 200: '#bcdaff', 300: '#8ec2ff',
-          400: '#589fff', 500: '#2f7bf6', 600: '#1a5ee0', 700: '#164ab6',
-          800: '#173f90', 900: '#183872',
+          50: '#fff3ec', 100: '#ffe4d3', 200: '#ffc6a5', 300: '#ffa271',
+          400: '#fc7636', 500: '#fc6e20', 600: '#ed5509', 700: '#c53d09',
+          800: '#9d3210', 900: '#7e2b10',
         },
       },
       fontFamily: { sans: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'] },
