@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { SectionTitle } from '@/components/admin/Ui';
-import SyncPanel from '@/components/admin/SyncPanel';
+import SheetSourcesAdmin from '@/components/admin/SheetSourcesAdmin';
 import DuplicateList from '@/components/admin/DuplicateList';
 import { formatDateTime, formatDuration } from '@/lib/format';
 import { getSettings, str } from '@/lib/settings';
-import { sheetsConfigured } from '@/lib/sheets';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +21,7 @@ export default async function ImportsPage() {
   const settings = await getSettings();
   const tz = str(settings, 'company.timezone');
 
-  const [logs, duplicates, pendingCount, companies] = await Promise.all([
+  const [logs, duplicates, pendingCount, companies, sources] = await Promise.all([
     prisma.importLog.findMany({ orderBy: { startedAt: 'desc' }, take: 40, include: { triggeredBy: { select: { name: true } }, company: { select: { name: true } } } }),
     prisma.duplicateHit.findMany({
       where: { resolution: 'PENDING' },
@@ -32,6 +31,7 @@ export default async function ImportsPage() {
     }),
     prisma.duplicateHit.count({ where: { resolution: 'PENDING' } }),
     prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+    prisma.sheetSource.findMany({ include: { company: { select: { name: true } } }, orderBy: { createdAt: 'desc' } }),
   ]);
 
   return (
@@ -44,13 +44,7 @@ export default async function ImportsPage() {
         </p>
       </div>
 
-      <SyncPanel
-        configured={sheetsConfigured()}
-        spreadsheetId={str(settings, 'sheets.spreadsheetId')}
-        tab={str(settings, 'sheets.tab')}
-        intervalMinutes={str(settings, 'sheets.autoSyncMinutes')}
-        companies={companies}
-      />
+      <SheetSourcesAdmin companies={companies} sources={sources} />
 
       <section>
         <SectionTitle>
@@ -110,11 +104,7 @@ export default async function ImportsPage() {
               {logs.length === 0 ? (
                 <tr>
                   <td className="td text-slate-500" colSpan={9}>
-                    No sync has run yet. Set the sheet up in{' '}
-                    <Link className="text-brand-600 underline" href="/admin/settings">
-                      Settings
-                    </Link>
-                    .
+                    No sync has run yet.
                   </td>
                 </tr>
               ) : null}

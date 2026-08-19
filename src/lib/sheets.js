@@ -277,12 +277,12 @@ function sheetsClient() {
 export const sheetsConfigured = () => Boolean(sheetsClient());
 
 /** Pull the master sheet through Sheets API v4 with a service account. */
-export async function syncFromGoogleSheet({ triggeredById = null, companyId = null } = {}) {
+export async function syncFromGoogleSheet({ triggeredById = null, companyId = null, spreadsheetId = null, sheetTab = null } = {}) {
   const settings = await getSettings();
-  const spreadsheetId = str(settings, 'sheets.spreadsheetId') || process.env.GOOGLE_SHEET_ID;
-  const sheetTab = str(settings, 'sheets.tab') || process.env.GOOGLE_SHEET_TAB || 'Leads';
+  const id = spreadsheetId || str(settings, 'sheets.spreadsheetId') || process.env.GOOGLE_SHEET_ID;
+  const tab = sheetTab || str(settings, 'sheets.tab') || process.env.GOOGLE_SHEET_TAB || 'Leads';
 
-  if (!spreadsheetId) {
+  if (!id) {
     throw new Error('No Google Sheet configured. Add the sheet ID in Admin > Settings.');
   }
   const client = sheetsClient();
@@ -293,8 +293,8 @@ export async function syncFromGoogleSheet({ triggeredById = null, companyId = nu
   }
 
   const res = await client.spreadsheets.values.get({
-    spreadsheetId,
-    range: `${sheetTab}!A1:Z10000`,
+    spreadsheetId: id,
+    range: `${tab}!A1:Z10000`,
     valueRenderOption: 'FORMATTED_VALUE',
   });
 
@@ -303,8 +303,8 @@ export async function syncFromGoogleSheet({ triggeredById = null, companyId = nu
     return ingestRows({
       rows: [],
       source: IMPORT_SOURCE.SHEETS_API,
-      spreadsheetId,
-      sheetTab,
+      spreadsheetId: id,
+      sheetTab: tab,
       triggeredById,
       companyId,
     });
@@ -312,7 +312,7 @@ export async function syncFromGoogleSheet({ triggeredById = null, companyId = nu
 
   const headerMap = mapHeaders(values[0]);
   if (headerMap.phone == null) {
-    throw new Error(`Could not find a phone number column in "${sheetTab}". Expected a header like "Phone Number".`);
+    throw new Error(`Could not find a phone number column in "${tab}". Expected a header like "Phone Number".`);
   }
 
   const rows = values
@@ -324,8 +324,8 @@ export async function syncFromGoogleSheet({ triggeredById = null, companyId = nu
     rows,
     headerMap,
     source: IMPORT_SOURCE.SHEETS_API,
-    spreadsheetId,
-    sheetTab,
+    spreadsheetId: id,
+    sheetTab: tab,
     triggeredById,
     companyId,
   });

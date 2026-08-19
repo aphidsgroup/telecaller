@@ -32,27 +32,37 @@ async function tick(req) {
   const settings = await getSettings({ fresh: true });
   const result = { ranAt: new Date().toISOString() };
 
-  // 1. Google Sheets poll (skipped when the interval has not elapsed yet)
+  // 1. Google Sheets poll
   const intervalMinutes = num(settings, 'sheets.autoSyncMinutes');
-  if (sheetsConfigured() && str(settings, 'sheets.spreadsheetId') && intervalMinutes > 0) {
-    const last = await prisma.importLog.findFirst({
-      where: { source: 'SHEETS_API' },
-      orderBy: { startedAt: 'desc' },
-      select: { startedAt: true },
-    });
-    const due = !last || Date.now() - new Date(last.startedAt).getTime() >= intervalMinutes * 60000;
-    if (due) {
-      try {
-        const sync = await syncFromGoogleSheet({});
-        result.sync = { inserted: sync.inserted, duplicates: sync.duplicates, invalid: sync.invalid };
-      } catch (err) {
-        result.sync = { error: String(err?.message || err) };
+  if (intervalMinutes > 0 && sheetsConfigured()) {
+    const sources = await prisma.sheetSource.findMany({ where: { isActive: true } });
+    const syncResults = [];
+
+    for (const source of sources) {
+      const last = await prisma.importLog.findFirst({
+        where: { source: 'SHEETS_API', spreadsheetId: source.spreadsheetId, sheetTab: source.sheetTab, companyId: source.companyId },
+        orderBy: { startedAt: 'desc' },
+        select: { startedAt: true },
+      });
+      const due = !last || Date.now() - new Date(last.startedAt).getTime() >= intervalMinutes * 60000;
+      if (due) {
+        try {
+          const sync = await syncFromGoogleSheet({
+            spreadsheetId: source.spreadsheetId,
+            sheetTab: source.sheetTab,
+            companyId: source.companyId,
+          });
+          syncResults.push({ name: source.name, inserted: sync.inserted, duplicates: sync.duplicates, invalid: sync.invalid });
+        } catch (err) {
+          syncResults.push({ name: source.name, error: String(err?.message || err) });
+        }
+      } else {
+        syncResults.push({ name: source.name, skipped: 'interval not elapsed' });
       }
-    } else {
-      result.sync = { skipped: 'interval not elapsed' };
     }
+    result.sync = syncResults;
   } else {
-    result.sync = { skipped: 'sheets not configured' };
+    result.sync = { skipped: 'sheets not configured or disabled' };
   }
 
   // 2. Anything still sitting in the pool gets pushed out
