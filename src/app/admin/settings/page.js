@@ -1,8 +1,10 @@
 import prisma from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 import { SectionTitle } from '@/components/admin/Ui';
 import SettingsForm from '@/components/admin/SettingsForm';
 import HolidayManager from '@/components/admin/HolidayManager';
 import RuleManager from '@/components/admin/RuleManager';
+import AdminProfile from '@/components/admin/AdminProfile';
 import { ROLE } from '@/lib/constants';
 import { getSettings, SETTING_DEFS } from '@/lib/settings';
 
@@ -11,6 +13,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Settings - Buildogram Admin' };
 
 export default async function SettingsPage() {
+  const user = await getCurrentUser();
   const [settings, holidays, rules, telecallers] = await Promise.all([
     getSettings({ fresh: true }),
     prisma.holiday.findMany({ orderBy: { date: 'asc' } }),
@@ -27,6 +30,8 @@ export default async function SettingsPage() {
           disposition, no deploy needed.
         </p>
       </div>
+
+      <AdminProfile user={{ id: user.id, name: user.name, email: user.email }} />
 
       <SettingsForm settings={settings} defs={SETTING_DEFS} />
 

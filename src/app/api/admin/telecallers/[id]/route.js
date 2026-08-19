@@ -11,6 +11,7 @@ export const PATCH = route(async (req, ctx) => {
 
   const data = {};
   if (body.name != null) data.name = String(body.name).trim();
+  if (body.email != null) data.email = String(body.email).toLowerCase().trim();
   if (body.phone != null) data.phone = String(body.phone).trim() || null;
   if (body.isActive != null) data.isActive = Boolean(body.isActive);
   if (body.dailyTarget != null) data.dailyTarget = Number(body.dailyTarget) || 0;

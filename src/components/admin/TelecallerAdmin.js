@@ -144,6 +144,16 @@ export default function TelecallerAdmin() {
                 className="text-xs font-semibold text-slate-500 underline"
                 disabled={busy}
                 onClick={() => {
+                  const email = window.prompt(`New email for ${u.name}`, u.email);
+                  if (email && email.trim() !== u.email) patch(u.id, { email: email.trim() }, 'Email updated');
+                }}
+              >
+                Change email
+              </button>
+              <button
+                className="text-xs font-semibold text-slate-500 underline"
+                disabled={busy}
+                onClick={() => {
                   const password = window.prompt(`New password for ${u.name} (min 6 characters)`);
                   if (password && password.length >= 6) patch(u.id, { password }, 'Password reset');
                 }}
