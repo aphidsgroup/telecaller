@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose';
 
 const SESSION_COOKIE = 'bt_session';
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/webhooks', '/api/cron', '/manifest.webmanifest', '/sw.js', '/offline.html', '/icons'];
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/webhooks', '/api/cron', '/manifest.webmanifest', '/sw.js', '/offline.html', '/icons', '/icon.png', '/logo-main.png'];
 
 function isPublic(pathname) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -55,5 +55,5 @@ export async function middleware(req) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|sw.js|offline.html|manifest.webmanifest).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icons|icon\\.png|logo-main\\.png|sw\\.js|offline\\.html|manifest\\.webmanifest).*)'],
 };
