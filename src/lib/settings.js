@@ -27,7 +27,7 @@ export const SETTING_DEFS = [
   { key: 'privacy.blockDnd', label: 'Block calling DND-marked leads', type: 'bool', def: 'true', group: 'Privacy',
     help: 'TRAI: numbers registered on DND must not receive promotional calls.' },
   { key: 'whatsapp.brochureTemplate', label: 'WhatsApp brochure message', type: 'textarea', group: 'Templates',
-    def: 'Hello {{name}}, thank you for your interest in {{project}}. Sharing our brochure and price list here.\n\nBuildogram Team' },
+    def: 'Hello {{name}}, thank you for your interest in {{project}}. Sharing our brochure and price list here.' },
   { key: 'sheets.spreadsheetId', label: 'Google Sheet ID', type: 'text', def: '', group: 'Google Sheets' },
   { key: 'sheets.tab', label: 'Sheet tab name', type: 'text', def: 'Leads', group: 'Google Sheets' },
   { key: 'sheets.autoSyncMinutes', label: 'Auto sync interval (minutes)', type: 'number', def: '60', group: 'Google Sheets' },
