@@ -1,0 +1,259 @@
+// Buildogram Telecaller PWA - data model
+// NOTE: enums are modelled as String columns on purpose so this schema runs
+// unchanged on SQLite (local/dev) and PostgreSQL (Supabase/Railway prod).
+// To move to Postgres: set provider = "postgresql" + DATABASE_URL, then `prisma db push`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  phone        String?
+  passwordHash String
+  role         String    @default("TELECALLER") // ADMIN | TELECALLER
+  isActive     Boolean   @default(true)
+  dailyTarget  Int       @default(60)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+  lastSeenAt   DateTime?
+
+  leads         Lead[]             @relation("assignee")
+  dispositions  Disposition[]
+  events        LeadEvent[]
+  sessions      LoginSession[]
+  subscriptions PushSubscription[]
+  rules         AssignmentRule[]
+  notifications Notification[]
+  imports       ImportLog[]
+  auditLogs     AuditLog[]
+
+  @@index([role, isActive])
+}
+
+model LoginSession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loginAt    DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  logoutAt   DateTime?
+  ip         String?
+  userAgent  String?
+
+  @@index([userId, loginAt])
+}
+
+model Lead {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String
+  phoneKey  String // normalised last-10-digits, used for de-duplication
+  altPhone  String?
+  source    String?
+  project   String? // Project / Site of interest
+  city      String?
+  budget    String?
+  notes     String? // notes that came in from the sheet
+  dateAdded DateTime? // "Date Added" column from the sheet
+  status    String    @default("UNASSIGNED") // UNASSIGNED|ASSIGNED|ACTIVE|IN_PROGRESS|SCHEDULED|CLOSED
+  priority  Int       @default(0) // higher = jumps the FIFO queue
+  score     Int       @default(0) // computed lead score
+  isDnd     Boolean   @default(false) // TRAI/DND suppression
+
+  assignedToId    String?
+  assignedTo      User?     @relation("assignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedAt      DateTime?
+  servedAt        DateTime? // first time this lead was put on a telecaller screen
+  callClickedAt   DateTime? // most recent call-button click
+  inProgressAt    DateTime?
+  lastContactedAt DateTime?
+  closedAt        DateTime?
+  followUpAt      DateTime?
+  followUpNotifiedAt DateTime? // stops the same follow-up pinging on every cron tick
+  attemptCount    Int       @default(0)
+
+  lastCallCategory String?
+  lastLeadStatus   String?
+
+  flaggedForReview Boolean   @default(false)
+  flagReason       String?
+  flaggedAt        DateTime?
+  slaBreachedAt    DateTime?
+
+  importLogId String?
+  importLog   ImportLog? @relation(fields: [importLogId], references: [id], onDelete: SetNull)
+  sourceRow   String? // "Sheet1!A23" for traceability back to the sheet
+  externalKey String?    @unique // spreadsheetId:tab:rowNumber - stops re-import churn
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events       LeadEvent[]
+  dispositions Disposition[]
+  duplicates   DuplicateHit[]
+
+  @@index([assignedToId, status, followUpAt])
+  @@index([phoneKey])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model LeadEvent {
+  id     String   @id @default(cuid())
+  leadId String
+  lead   Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId String?
+  user   User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type   String // LEAD_UPLOADED | LEAD_ASSIGNED | ... (see lib/constants.js)
+  at     DateTime @default(now())
+  meta   String? // JSON blob
+
+  @@index([leadId, at])
+  @@index([userId, at])
+  @@index([type, at])
+}
+
+// Append-only status history. A disposition row is never updated or deleted;
+// an admin override writes a new row instead.
+model Disposition {
+  id              String    @id @default(cuid())
+  leadId          String
+  lead            Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attemptNo       Int       @default(1)
+  callCategory    String
+  leadStatus      String
+  notes           String?
+  callClickedAt   DateTime?
+  submittedAt     DateTime  @default(now())
+  responseSeconds Int? // call-click -> status-submit, the productivity metric
+  followUpAt      DateTime?
+  isOverride      Boolean   @default(false) // written by an admin, not the telecaller
+  queuedOffline   Boolean   @default(false)
+  clientEventId   String    @unique // idempotency key from the client / offline queue
+  createdAt       DateTime  @default(now())
+
+  @@index([leadId, submittedAt])
+  @@index([userId, submittedAt])
+}
+
+model ImportLog {
+  id            String    @id @default(cuid())
+  source        String // SHEETS_API | APPS_SCRIPT_WEBHOOK | MANUAL
+  spreadsheetId String?
+  sheetTab      String?
+  status        String    @default("RUNNING") // RUNNING | SUCCESS | PARTIAL | FAILED
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  rowsRead      Int       @default(0)
+  inserted      Int       @default(0)
+  duplicates    Int       @default(0)
+  invalid       Int       @default(0)
+  message       String?
+  errorDetail   String?
+
+  triggeredById String?
+  triggeredBy   User?   @relation(fields: [triggeredById], references: [id], onDelete: SetNull)
+
+  leads         Lead[]
+  duplicateHits DuplicateHit[]
+
+  @@index([startedAt])
+}
+
+// A row that was skipped because its phone number already exists. Flagged for
+// the admin rather than silently creating a second lead record.
+model DuplicateHit {
+  id             String     @id @default(cuid())
+  importLogId    String?
+  importLog      ImportLog? @relation(fields: [importLogId], references: [id], onDelete: SetNull)
+  existingLeadId String
+  existingLead   Lead       @relation(fields: [existingLeadId], references: [id], onDelete: Cascade)
+  phone          String
+  name           String?
+  rawRow         String? // JSON of the incoming row
+  sourceRow      String?
+  resolution     String     @default("PENDING") // PENDING | IGNORED | MERGED_NOTES | FORCED_NEW
+  resolvedAt     DateTime?
+  createdAt      DateTime   @default(now())
+
+  @@index([resolution, createdAt])
+}
+
+model AssignmentRule {
+  id         String   @id @default(cuid())
+  field      String // city | project | source
+  matchValue String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  priority   Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([field, isActive])
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Holiday {
+  id   String   @id @default(cuid())
+  date DateTime @unique // stored at 00:00 local
+  name String
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Notification {
+  id     String    @id @default(cuid())
+  userId String
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type   String // NEW_LEAD | FOLLOWUP_DUE | REASSIGNED | SLA_ALERT | ADMIN_MSG
+  title  String
+  body   String
+  url    String?
+  sentAt DateTime  @default(now())
+  readAt DateTime?
+  pushOk Boolean   @default(false)
+
+  @@index([userId, sentAt])
+}
+
+// Admin-level actions that are not tied to a single lead (exports, settings
+// changes, user management). Append-only, same as LeadEvent.
+model AuditLog {
+  id     String   @id @default(cuid())
+  userId String?
+  user   User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action String // EXPORT | SETTINGS_UPDATED | USER_CREATED | USER_UPDATED | SYNC_TRIGGERED
+  detail String? // JSON blob
+  ip     String?
+  at     DateTime @default(now())
+
+  @@index([at])
+  @@index([userId, at])
+}

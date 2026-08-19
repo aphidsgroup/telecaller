@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Offline - Buildogram Telecalling</title>
+    <style>
+      body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:#f1f5f9; color:#0f172a;
+             display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+      .box { max-width:360px; text-align:center; background:#fff; border-radius:16px; padding:28px; box-shadow:0 1px 3px rgba(15,23,42,.1); }
+      h1 { font-size:20px; margin:0 0 8px; }
+      p { font-size:14px; color:#475569; line-height:1.55; margin:0 0 18px; }
+      button { background:#1a5ee0; color:#fff; border:0; border-radius:12px; padding:12px 20px; font-size:14px; font-weight:600; }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>You are offline</h1>
+      <p>
+        Any status update you already submitted is saved on this device and will sync by itself. New leads are only
+        handed out when you have a connection, so nobody else can work the same lead.
+      </p>
+      <button onclick="location.reload()">Try again</button>
+    </div>
+  </body>
+</html>
