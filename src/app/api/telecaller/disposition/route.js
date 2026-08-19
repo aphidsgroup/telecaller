@@ -18,6 +18,7 @@ export const POST = route(async (req) => {
     callCategory: body.callCategory,
     leadStatus: body.leadStatus,
     notes: body.notes,
+    audioBase64: body.audioBase64,
     callClickedAt: body.callClickedAt,
     queuedOffline: Boolean(body.queuedOffline),
   });

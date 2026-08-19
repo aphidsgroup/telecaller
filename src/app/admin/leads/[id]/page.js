@@ -151,6 +151,11 @@ export default async function LeadDetailPage({ params }) {
                       {d.followUpAt ? <span>Follow-up {formatDateTime(d.followUpAt, tz)}</span> : null}
                     </div>
                     {d.notes ? <p className="mt-2 whitespace-pre-wrap text-sm italic text-slate-700">{d.notes}</p> : null}
+                    {d.audioBase64 ? (
+                      <div className="mt-2">
+                        <audio src={d.audioBase64} controls className="h-8 max-w-full" />
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ol>

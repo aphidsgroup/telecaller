@@ -160,6 +160,27 @@ export default function TelecallerAdmin() {
               >
                 Reset password
               </button>
+              <button
+                className="text-xs font-semibold text-rose-500 underline ml-2"
+                disabled={busy}
+                onClick={async () => {
+                  if (window.confirm(`Are you sure you want to permanently delete ${u.name}? This will delete their past call logs too.`)) {
+                    setBusy(true);
+                    try {
+                      const res = await fetch(`/api/admin/telecallers/${u.id}`, { method: 'DELETE' });
+                      if (!res.ok) throw new Error('Delete failed');
+                      setMessage(`${u.name} deleted.`);
+                      await refresh();
+                    } catch (e) {
+                      setMessage(e.message);
+                    } finally {
+                      setBusy(false);
+                    }
+                  }
+                }}
+              >
+                Delete
+              </button>
             </div>
           ))}
         </div>

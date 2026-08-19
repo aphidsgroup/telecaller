@@ -1,6 +1,7 @@
 'use client';
 
-import { Loader2, MessageSquare, Send } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Loader2, MessageSquare, Send, Mic, Square, Trash2 } from 'lucide-react';
 import { CALL_CATEGORY, CALLBACK_CATEGORIES, LEAD_STATUS_CATEGORY, TERMINAL_LEAD_STATUSES } from '@/lib/constants';
 
 function ChipGroup({ options, value, onChange, disabled }) {
@@ -11,7 +12,7 @@ function ChipGroup({ options, value, onChange, disabled }) {
           key={o.value}
           type="button"
           disabled={disabled}
-          onClick={() => onChange(o.value)}
+          onClick={() => onChange(value === o.value ? '' : o.value)}
           className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-all duration-100 ${
             value === o.value
               ? 'border-brand-500 bg-brand-500 text-white shadow-sm'
@@ -21,6 +22,72 @@ function ChipGroup({ options, value, onChange, disabled }) {
           {o.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+function AudioRecorder({ audioBase64, onAudioData, disabled }) {
+  const [recording, setRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          onAudioData(reader.result);
+        };
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setRecording(true);
+    } catch (err) {
+      alert('Microphone access denied or unavailable.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
+  };
+
+  if (audioBase64) {
+    return (
+      <div className="mt-2 flex items-center gap-2 rounded-lg bg-emerald-50 p-2 border border-emerald-100">
+        <audio src={audioBase64} controls className="h-8 max-w-[200px]" />
+        <button type="button" onClick={() => onAudioData('')} className="p-1 text-rose-500 hover:bg-rose-100 rounded">
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2">
+      {recording ? (
+        <button type="button" onClick={stopRecording} className="btn-ghost flex items-center gap-2 text-rose-600 bg-rose-50 border border-rose-200">
+          <Square className="h-4 w-4 animate-pulse" /> Stop recording
+        </button>
+      ) : (
+        <button type="button" onClick={startRecording} disabled={disabled} className="btn-ghost flex items-center gap-2 text-slate-600 border border-slate-200">
+          <Mic className="h-4 w-4" /> Add voice note
+        </button>
+      )}
     </div>
   );
 }
@@ -103,12 +170,20 @@ export default function DispositionForm({
             onChange={(e) => set({ notes: e.target.value })}
             maxLength={500}
           />
-          {form.notes ? (
-            <p className="mt-1 text-right text-[10px] text-slate-400">{form.notes.length}/500</p>
-          ) : null}
+          <div className="flex justify-between items-center">
+            <AudioRecorder 
+              audioBase64={form.audioBase64} 
+              onAudioData={(d) => set({ audioBase64: d })} 
+              disabled={!unlocked || submitting} 
+            />
+            {form.notes ? (
+              <p className="mt-1 text-right text-[10px] text-slate-400">{form.notes.length}/500</p>
+            ) : null}
+          </div>
         </div>
 
         {/* Hints */}
+
         {willSchedule ? (
           <div className="rounded-xl bg-brand-50 border border-brand-100 px-3 py-2.5 text-xs text-brand-800 font-medium">
             📅 This lead will return to you automatically at the scheduled time, inside working hours.

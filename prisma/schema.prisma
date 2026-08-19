@@ -134,6 +134,7 @@ model Disposition {
   callCategory    String
   leadStatus      String
   notes           String?
+  audioBase64     String?
   callClickedAt   DateTime?
   submittedAt     DateTime  @default(now())
   responseSeconds Int? // call-click -> status-submit, the productivity metric

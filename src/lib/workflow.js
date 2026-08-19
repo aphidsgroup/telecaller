@@ -83,6 +83,7 @@ export async function submitDisposition({
   callCategory,
   leadStatus,
   notes = '',
+  audioBase64 = null,
   callClickedAt = null,
   queuedOffline = false,
 }) {
@@ -154,6 +155,7 @@ export async function submitDisposition({
       callCategory,
       leadStatus,
       notes: notes?.trim() || null,
+      audioBase64,
       callClickedAt: clickAt,
       submittedAt,
       responseSeconds,

@@ -24,3 +24,11 @@ export const PATCH = route(async (req, ctx) => {
   });
   return ok({ user });
 });
+
+export const DELETE = route(async (req, ctx) => {
+  await requireAdmin();
+  const { id } = await ctx.params;
+  await prisma.user.delete({ where: { id } });
+  return ok({ deleted: true });
+});
+
