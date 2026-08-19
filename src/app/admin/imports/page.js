@@ -34,6 +34,16 @@ export default async function ImportsPage() {
     prisma.sheetSource.findMany({ include: { company: { select: { name: true } } }, orderBy: { createdAt: 'desc' } }),
   ]);
 
+  for (const s of sources) {
+    const lastLog = await prisma.importLog.findFirst({
+      where: { source: 'SHEETS_API', spreadsheetId: s.spreadsheetId, sheetTab: s.sheetTab, companyId: s.companyId },
+      orderBy: { startedAt: 'desc' }
+    });
+    s.lastSyncAt = lastLog ? lastLog.startedAt.toISOString() : null;
+  }
+
+  const serviceEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '';
+
   return (
     <div className="space-y-6">
       <div>
@@ -44,7 +54,7 @@ export default async function ImportsPage() {
         </p>
       </div>
 
-      <SheetSourcesAdmin companies={companies} sources={sources} />
+      <SheetSourcesAdmin companies={companies} sources={sources} serviceEmail={serviceEmail} tz={tz} />
 
       <section>
         <SectionTitle>

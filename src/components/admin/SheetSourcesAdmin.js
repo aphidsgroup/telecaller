@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2, Link as LinkIcon, Plus, Check, X, RefreshCw } from 'lucide-react';
+import { RefreshCw, Trash2, Check, X, Plus, Link as LinkIcon } from 'lucide-react';
+import { formatDateTime } from '@/lib/format';
 
-export default function SheetSourcesAdmin({ companies, sources }) {
+export default function SheetSourcesAdmin({ companies, sources, serviceEmail, tz }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -31,13 +32,13 @@ export default function SheetSourcesAdmin({ companies, sources }) {
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error || 'Failed to create');
+        throw new Error(err.error || 'Failed to add source');
       }
       setAdding(false);
       setName('');
       setLink('');
-      setTab('Leads');
       setCompanyId('');
+      setTab('Leads');
       router.refresh();
     } catch (err) {
       alert(err.message);
@@ -81,7 +82,8 @@ export default function SheetSourcesAdmin({ companies, sources }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Sync failed');
-      alert(`Sync triggered successfully!`);
+      const details = data.details.map(d => d.error ? d.name + ': ' + d.error : d.name + ': ' + d.inserted + ' leads inserted').join('\n');
+      alert(data.message + '\n\n' + details);
       router.refresh();
     } catch (err) {
       alert(err.message);
@@ -93,7 +95,10 @@ export default function SheetSourcesAdmin({ companies, sources }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2 justify-between">
-        <h2 className="text-lg font-bold text-slate-800">Connected Sheets</h2>
+        <div className="flex flex-col">
+          <h2 className="text-lg font-bold text-slate-800">Connected Sheets</h2>
+          {serviceEmail && <p className="text-xs text-rose-600 font-medium mt-1">⚠️ You MUST share your Google Sheets with: <span className="font-mono bg-rose-50 px-1 rounded select-all">{serviceEmail}</span></p>}
+        </div>
         <div className="flex gap-2">
           <button className="btn-ghost flex items-center gap-2" onClick={() => handleSync()} disabled={busy || sources.length === 0}>
             <RefreshCw className="h-4 w-4" /> Sync All Active
@@ -113,8 +118,8 @@ export default function SheetSourcesAdmin({ companies, sources }) {
             </div>
             <div>
               <label className="label">Company</label>
-              <select required className="input" value={companyId} onChange={e => setCompanyId(e.target.value)} disabled={busy}>
-                <option value="">Select company...</option>
+              <select className="input" value={companyId || ''} onChange={e => setCompanyId(e.target.value)} disabled={busy}>
+                <option value="">(None - Global)</option>
                 {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
@@ -166,6 +171,9 @@ export default function SheetSourcesAdmin({ companies, sources }) {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold text-slate-600">Tab:</span> {source.sheetTab}
+                </div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="font-semibold text-slate-600">Last synced:</span> {source.lastSyncAt ? formatDateTime(source.lastSyncAt, tz) : 'Never'}
                 </div>
               </div>
             </div>
