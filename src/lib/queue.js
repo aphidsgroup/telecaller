@@ -9,7 +9,7 @@ const LEAD_SELECT = {
   score: true, isDnd: true, assignedToId: true, assignedAt: true, servedAt: true,
   callClickedAt: true, inProgressAt: true, lastContactedAt: true, followUpAt: true,
   attemptCount: true, lastCallCategory: true, lastLeadStatus: true, createdAt: true,
-  flaggedForReview: true, flagReason: true,
+  flaggedForReview: true, flagReason: true, duplicates: { select: { id: true } }
 };
 
 /** Shape sent to the telecaller screen - plus the previous attempts for context. */

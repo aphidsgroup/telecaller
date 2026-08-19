@@ -36,6 +36,11 @@ export default function LeadCard({ lead, tz }) {
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <span className={bandChip}>{band}</span>
+          {lead.duplicates?.length > 0 ? (
+            <span className="chip bg-rose-100 text-rose-700 font-bold border border-rose-200">
+              Repeated ({lead.duplicates.length + 1}x)
+            </span>
+          ) : null}
           {lead.attemptCount > 0 ? (
             <span className="chip bg-slate-100 text-slate-600">Attempt {lead.attemptCount + 1}</span>
           ) : (
