@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ok, route, badRequest, notFound } from '@/lib/api';
+import { ok, fail, route } from '@/lib/api';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 
@@ -26,7 +26,7 @@ async function updateSource(req, { params }) {
     });
     return ok({ source });
   } catch (err) {
-    if (err.code === 'P2025') return notFound('SheetSource not found');
+    if (err.code === 'P2025') return fail(404, 'SheetSource not found');
     throw err;
   }
 }
@@ -41,7 +41,7 @@ async function deleteSource(req, { params }) {
     });
     return ok({ success: true });
   } catch (err) {
-    if (err.code === 'P2025') return notFound('SheetSource not found');
+    if (err.code === 'P2025') return fail(404, 'SheetSource not found');
     throw err;
   }
 }

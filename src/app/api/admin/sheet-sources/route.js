@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ok, route, badRequest } from '@/lib/api';
+import { ok, fail, route } from '@/lib/api';
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 
@@ -21,7 +21,7 @@ async function createSource(req) {
   const body = await req.json();
 
   if (!body.companyId || !body.name || !body.spreadsheetId) {
-    return badRequest('Company ID, name, and spreadsheetId are required');
+    return fail(400, 'Company ID, name, and spreadsheetId are required');
   }
 
   const source = await prisma.sheetSource.create({
