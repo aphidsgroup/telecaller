@@ -36,10 +36,15 @@ export default function LeadCard({ lead, tz }) {
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <span className={bandChip}>{band}</span>
-          {lead.duplicates?.length > 0 ? (
-            <span className="chip bg-rose-100 text-rose-700 font-bold border border-rose-200">
-              Repeated ({lead.duplicates.length + 1}x)
-            </span>
+          {lead.duplicateSources?.length > 0 ? (
+            <div className="flex flex-col items-end gap-1">
+              <span className="chip bg-rose-100 text-rose-700 font-bold border border-rose-200">
+                Repeated ({(lead.duplicates?.length || lead.duplicateSources.length) + 1}x)
+              </span>
+              <span className="text-[9px] text-rose-600 font-medium text-right max-w-[120px] leading-tight">
+                Also found in: {lead.duplicateSources.join(', ')}
+              </span>
+            </div>
           ) : null}
           {lead.attemptCount > 0 ? (
             <span className="chip bg-slate-100 text-slate-600">Attempt {lead.attemptCount + 1}</span>

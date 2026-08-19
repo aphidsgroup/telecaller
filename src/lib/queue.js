@@ -9,7 +9,8 @@ const LEAD_SELECT = {
   score: true, isDnd: true, assignedToId: true, assignedAt: true, servedAt: true,
   callClickedAt: true, inProgressAt: true, lastContactedAt: true, followUpAt: true,
   attemptCount: true, lastCallCategory: true, lastLeadStatus: true, createdAt: true,
-  flaggedForReview: true, flagReason: true, duplicates: { select: { id: true } }
+  flaggedForReview: true, flagReason: true,
+  duplicates: { select: { id: true, importLog: { select: { spreadsheetId: true, sheetTab: true } } } }
 };
 
 /** Shape sent to the telecaller screen - plus the previous attempts for context. */
@@ -25,19 +26,40 @@ export async function serialiseLeadForCaller(lead) {
       user: { select: { name: true } },
     },
   });
+
+  // Attach friendly sheet names to duplicates if possible
+  const duplicateSources = [];
+  if (lead.duplicates && lead.duplicates.length > 0) {
+    const spreadsheetIds = lead.duplicates.map(d => d.importLog?.spreadsheetId).filter(Boolean);
+    const sources = spreadsheetIds.length ? await prisma.sheetSource.findMany({
+      where: { spreadsheetId: { in: spreadsheetIds } },
+      select: { spreadsheetId: true, name: true }
+    }) : [];
+    const sourceMap = Object.fromEntries(sources.map(s => [s.spreadsheetId, s.name]));
+    
+    for (const dup of lead.duplicates) {
+      if (dup.importLog?.spreadsheetId) {
+        duplicateSources.push(sourceMap[dup.importLog.spreadsheetId] || dup.importLog.sheetTab || 'Unknown Sheet');
+      } else {
+        duplicateSources.push('Unknown Source');
+      }
+    }
+  }
+
   return {
     ...lead,
     callClicked: lead.status === LEAD_STATUS.IN_PROGRESS,
+    duplicateSources: [...new Set(duplicateSources)],
     history: history.map((h) => ({
       id: h.id,
       attemptNo: h.attemptNo,
       callCategory: h.callCategory,
       leadStatus: h.leadStatus,
       notes: h.notes,
-      submittedAt: h.submittedAt,
-      followUpAt: h.followUpAt,
+      submittedAt: h.submittedAt.toISOString(),
+      followUpAt: h.followUpAt ? h.followUpAt.toISOString() : null,
       isOverride: h.isOverride,
-      by: h.user?.name || 'System',
+      by: h.user?.name || 'Unknown',
     })),
   };
 }
