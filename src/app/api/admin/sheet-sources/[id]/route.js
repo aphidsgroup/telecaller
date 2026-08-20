@@ -8,8 +8,8 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 async function updateSource(req, { params }) {
-  const user = await requireAdmin(req);
-  const { id } = params;
+  const user = await requireAdmin();
+  const { id } = await params;
   const body = await req.json();
 
   try {
@@ -34,8 +34,8 @@ async function updateSource(req, { params }) {
 }
 
 async function deleteSource(req, { params }) {
-  const user = await requireAdmin(req);
-  const { id } = params;
+  const user = await requireAdmin();
+  const { id } = await params;
 
   try {
     const source = await prisma.sheetSource.findUnique({ where: { id } });
@@ -57,7 +57,7 @@ async function deleteSource(req, { params }) {
 
 async function forceResync(req, { params }) {
   const admin = await requireAdmin();
-  const { id } = params;
+  const { id } = await params;
 
   try {
     const source = await prisma.sheetSource.findUnique({ where: { id } });
