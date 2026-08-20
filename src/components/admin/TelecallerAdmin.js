@@ -170,9 +170,18 @@ export default function TelecallerAdmin() {
                 >
                   {u.isActive ? 'Deactivate' : 'Activate'}
                 </button>
-                <select
-                  className="bg-transparent text-slate-500 font-semibold focus:outline-none cursor-pointer"
-                  value={u.companyId || ''}
+                  <select
+                    className="bg-transparent text-slate-500 font-semibold focus:outline-none cursor-pointer"
+                    value={u.role || ROLE.TELECALLER}
+                    onChange={(e) => patch(u.id, { role: e.target.value }, `Changed role for ${u.name}`)}
+                    disabled={busy}
+                  >
+                    <option value={ROLE.TELECALLER}>Telecaller</option>
+                    <option value={ROLE.MANAGER}>Manager</option>
+                  </select>
+                  <select
+                    className="bg-transparent text-slate-500 font-semibold focus:outline-none cursor-pointer"
+                    value={u.companyId || ''}
                   onChange={(e) => patch(u.id, { companyId: e.target.value || null }, `Assigned ${u.name} to company`)}
                   disabled={busy}
                 >

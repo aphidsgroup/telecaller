@@ -14,6 +14,7 @@ export const PATCH = route(async (req, ctx) => {
   if (body.email != null) data.email = String(body.email).toLowerCase().trim();
   if (body.phone != null) data.phone = String(body.phone).trim() || null;
   if (body.isActive != null) data.isActive = Boolean(body.isActive);
+  if (body.role != null) data.role = body.role;
   if (body.dailyTarget != null) data.dailyTarget = Number(body.dailyTarget) || 0;
   if (body.password) data.passwordHash = await hashPassword(String(body.password));
   if (body.companyId !== undefined) data.companyId = body.companyId || null;
