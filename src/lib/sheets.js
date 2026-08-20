@@ -370,7 +370,7 @@ export async function syncFromGoogleSheet({ triggeredById = null, companyId = nu
   if (client) {
     const res = await client.spreadsheets.values.get({
       spreadsheetId: id,
-      range: `${tab}!A1:Z10000`,
+      range: `${tab}!A1:Z50000`,
       valueRenderOption: 'FORMATTED_VALUE',
     });
     values = res.data.values || [];
