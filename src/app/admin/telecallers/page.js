@@ -17,11 +17,11 @@ export default async function TelecallersPage() {
   const now = new Date();
 
   const users = await prisma.user.findMany({
-    where: { role: ROLE.TELECALLER },
+    where: { role: { in: [ROLE.TELECALLER, ROLE.MANAGER] } },
     orderBy: { name: 'asc' },
     select: {
       id: true, name: true, email: true, phone: true, isActive: true, dailyTarget: true,
-      lastLoginAt: true, lastSeenAt: true,
+      lastLoginAt: true, lastSeenAt: true, role: true
     },
   });
 
@@ -102,7 +102,9 @@ export default async function TelecallersPage() {
                       </Link>
                       {!r.isActive ? <span className="chip bg-slate-100 text-slate-500">Inactive</span> : null}
                     </div>
-                    <div className="text-xs text-slate-500">{r.email}</div>
+                    <div className="text-xs text-slate-500">
+                      {r.email} {r.role === ROLE.MANAGER && <span className="ml-1 text-[10px] bg-amber-100 text-amber-700 px-1 rounded uppercase tracking-wider font-bold">Manager</span>}
+                    </div>
                   </td>
                   <td className="td">
                     <div className="flex items-center gap-2">

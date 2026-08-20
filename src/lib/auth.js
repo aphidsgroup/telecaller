@@ -96,6 +96,7 @@ export async function requireRole(role) {
 }
 
 export const requireAdmin = () => requireRole(ROLE.ADMIN);
+export const requireManager = () => requireRole(ROLE.MANAGER);
 export const requireTelecaller = () => requireRole(ROLE.TELECALLER);
 
 export async function touchPresence(userId, sessionId) {

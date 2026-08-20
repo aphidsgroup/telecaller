@@ -1,7 +1,7 @@
 // Shared vocabulary for the whole app. Kept as plain strings so the same
 // values work in the DB (SQLite/Postgres), the API and the UI.
 
-export const ROLE = { ADMIN: 'ADMIN', TELECALLER: 'TELECALLER' };
+export const ROLE = { ADMIN: 'ADMIN', MANAGER: 'MANAGER', TELECALLER: 'TELECALLER' };
 
 export const LEAD_STATUS = {
   UNASSIGNED: 'UNASSIGNED',   // sitting in the central pool

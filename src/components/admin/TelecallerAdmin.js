@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ROLE } from '@/lib/constants';
 
-const BLANK = { name: '', email: '', phone: '', password: '', dailyTarget: 60 };
+const BLANK = { name: '', email: '', phone: '', password: '', dailyTarget: 60, role: 'TELECALLER' };
 
 export default function TelecallerAdmin() {
   const router = useRouter();
@@ -112,6 +113,13 @@ export default function TelecallerAdmin() {
               {companies.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Role</label>
+            <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+              <option value={ROLE.TELECALLER}>Telecaller</option>
+              <option value={ROLE.MANAGER}>Manager</option>
             </select>
           </div>
           <div>

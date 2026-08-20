@@ -9,7 +9,11 @@ export const metadata = { title: 'Sign in - Buildogram Telecalling' };
 
 export default async function LoginPage({ searchParams }) {
   const user = await getCurrentUser();
-  if (user) redirect(user.role === ROLE.ADMIN ? '/admin' : '/caller');
+  if (user) {
+    if (user.role === ROLE.ADMIN) redirect('/admin');
+    if (user.role === ROLE.MANAGER) redirect('/manager');
+    redirect('/caller');
+  }
   const params = await searchParams;
 
   return (

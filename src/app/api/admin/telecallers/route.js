@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const GET = route(async () => {
   await requireAdmin();
   const users = await prisma.user.findMany({
-    where: { role: ROLE.TELECALLER },
+    where: { role: { in: [ROLE.TELECALLER, ROLE.MANAGER] } },
     select: { id: true, name: true, email: true, isActive: true, dailyTarget: true, lastSeenAt: true, companyId: true, company: { select: { name: true } } },
     orderBy: { name: 'asc' },
   });
@@ -31,7 +31,7 @@ export const POST = route(async (req) => {
       name: String(name).trim(),
       email: normalised,
       phone: phone ? String(phone).trim() : null,
-      role: role === ROLE.ADMIN ? ROLE.ADMIN : ROLE.TELECALLER,
+      role: [ROLE.ADMIN, ROLE.MANAGER, ROLE.TELECALLER].includes(role) ? role : ROLE.TELECALLER,
       dailyTarget: Number(dailyTarget) || 60,
       passwordHash: await hashPassword(String(password)),
       companyId: companyId || null,
