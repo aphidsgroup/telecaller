@@ -92,6 +92,22 @@ export default function SheetSourcesAdmin({ companies, sources, serviceEmail, tz
     }
   }
 
+  async function handleForceResync(sourceId) {
+    if (!confirm('⚠️ Force Re-sync will DELETE all existing leads from this sheet and re-import them fresh. Continue?')) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/sheet-sources/${sourceId}`, { method: 'PATCH' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Force re-sync failed');
+      alert(data.message);
+      router.refresh();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2 justify-between">
@@ -176,9 +192,17 @@ export default function SheetSourcesAdmin({ companies, sources, serviceEmail, tz
                   <span className="font-semibold text-slate-600">Last synced:</span> {source.lastSyncAt ? formatDateTime(source.lastSyncAt, tz) : 'Never'}
                 </div>
                 <div className="flex items-center gap-1.5 mt-1 text-brand-700">
-                  <span className="font-semibold text-slate-600">Leads extracted:</span> {source.leadCount}
+                  <span className="font-semibold text-slate-600">Leads extracted:</span> {source.leadCount ?? 0}
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => handleForceResync(source.id)}
+                disabled={busy || !source.isActive}
+                className="w-full mt-2 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+              >
+                🔄 Force Re-sync (clear & reimport all)
+              </button>
             </div>
           ))}
         </div>
