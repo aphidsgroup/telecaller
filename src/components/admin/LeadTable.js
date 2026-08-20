@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { StatusChip } from './Ui';
-import { callCategoryLabel, leadStatusCategoryLabel } from '@/lib/constants';
+import { callCategoryLabel, leadStatusCategoryLabel, LEAD_STATUS_CATEGORY } from '@/lib/constants';
 import { displayPhone, formatDateTime, relativeTime } from '@/lib/format';
 
 export default function LeadTable({ leads, telecallers, tz }) {
@@ -124,8 +124,22 @@ export default function LeadTable({ leads, telecallers, tz }) {
                 <td className="td">
                   {lead.lastLeadStatus ? (
                     <div>
-                      <div className="text-xs font-semibold text-slate-700">{leadStatusCategoryLabel(lead.lastLeadStatus)}</div>
-                      <div className="text-xs text-slate-500">{callCategoryLabel(lead.lastCallCategory)}</div>
+                      <select
+                        className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded px-1 py-0.5 hover:bg-slate-100 cursor-pointer w-full max-w-[150px] truncate"
+                        value={lead.lastLeadStatus}
+                        onChange={async (e) => {
+                          const newStatus = e.target.value;
+                          const res = await fetch(`/api/admin/leads/${lead.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ leadStatus: newStatus, notes: 'Status updated from table' })
+                          });
+                          if (res.ok) router.refresh();
+                        }}
+                      >
+                        {LEAD_STATUS_CATEGORY.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                      <div className="text-[11px] text-slate-500 mt-1">{callCategoryLabel(lead.lastCallCategory)}</div>
                     </div>
                   ) : (
                     <span className="text-slate-400">Not called yet</span>
