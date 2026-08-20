@@ -175,6 +175,9 @@ export default function SheetSourcesAdmin({ companies, sources, serviceEmail, tz
                 <div className="flex items-center gap-1.5 mt-1">
                   <span className="font-semibold text-slate-600">Last synced:</span> {source.lastSyncAt ? formatDateTime(source.lastSyncAt, tz) : 'Never'}
                 </div>
+                <div className="flex items-center gap-1.5 mt-1 text-brand-700">
+                  <span className="font-semibold text-slate-600">Leads extracted:</span> {source.leadCount}
+                </div>
               </div>
             </div>
           ))}

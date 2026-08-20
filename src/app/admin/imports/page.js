@@ -40,6 +40,14 @@ export default async function ImportsPage() {
       orderBy: { startedAt: 'desc' }
     });
     s.lastSyncAt = lastLog ? lastLog.startedAt.toISOString() : null;
+    
+    s.leadCount = await prisma.lead.count({
+      where: {
+        externalKey: {
+          startsWith: `${s.spreadsheetId}:${s.sheetTab || 'default'}:`
+        }
+      }
+    });
   }
 
   const serviceEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '';
