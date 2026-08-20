@@ -7,6 +7,7 @@ import { notifyNewAssignments } from './push';
 import { scoreLead } from './score';
 import { isValidPhone, normalisePhone } from './format';
 import { EVENT, IMPORT_SOURCE, LEAD_STATUS } from './constants';
+import Papa from 'papaparse';
 
 // The master sheet has a fixed column structure, but we match on header text
 // (case/space/punctuation insensitive) so a reordered or renamed-ish column
@@ -299,19 +300,31 @@ export async function syncFromGoogleSheet({ triggeredById = null, companyId = nu
     throw new Error('No Google Sheet configured. Add the sheet ID in Admin > Settings.');
   }
   const client = sheetsClient();
-  if (!client) {
-    throw new Error(
-      'Google service account credentials are missing. Set GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_PRIVATE_KEY, or use the Apps Script webhook instead.'
-    );
+  let values = [];
+
+  if (client) {
+    const res = await client.spreadsheets.values.get({
+      spreadsheetId: id,
+      range: `${tab}!A1:Z10000`,
+      valueRenderOption: 'FORMATTED_VALUE',
+    });
+    values = res.data.values || [];
+  } else {
+    // Attempt public CSV fetch
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+    const res = await fetch(csvUrl);
+    if (!res.ok) throw new Error(`Failed to fetch public sheet (${res.status}). Please make sure it is set to "Anyone with the link can view"`);
+    const text = await res.text();
+    if (text.trim().toLowerCase().startsWith('<!doctype html>')) {
+      throw new Error(`Sheet is not public. Please click Share > "Anyone with the link can view".`);
+    }
+    const parsed = Papa.parse(text, { skipEmptyLines: true });
+    if (parsed.errors.length > 0) {
+      console.error('CSV parse error', parsed.errors);
+      throw new Error('Failed to parse sheet data');
+    }
+    values = parsed.data || [];
   }
-
-  const res = await client.spreadsheets.values.get({
-    spreadsheetId: id,
-    range: `${tab}!A1:Z10000`,
-    valueRenderOption: 'FORMATTED_VALUE',
-  });
-
-  const values = res.data.values || [];
   if (values.length < 2) {
     return ingestRows({
       rows: [],
