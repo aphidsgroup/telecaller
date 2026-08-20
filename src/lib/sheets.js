@@ -174,23 +174,10 @@ export async function ingestRows({
     const leadsToInsert = [];
     const duplicatesToInsert = [];
     const eventsToInsert = [];
+    const internalDuplicates = [];
 
     for (const lead of parsedLeads) {
-      // Internal batch deduplication
-      if (seenInBatch.has(lead.phoneKey)) {
-        duplicates += 1;
-        duplicatesToInsert.push({
-          importLogId: log.id,
-          existingLeadId: seenInBatch.get(lead.phoneKey),
-          phone: lead.phone,
-          name: lead.name,
-          rawRow: JSON.stringify(lead),
-          sourceRow: lead.sourceRow,
-        });
-        continue;
-      }
-
-      // Check DB deduplication by phone
+      // Check DB deduplication by phone FIRST
       if (existingByPhone.has(lead.phoneKey)) {
         duplicates += 1;
         const existing = existingByPhone.get(lead.phoneKey);
@@ -210,6 +197,13 @@ export async function ingestRows({
           type: EVENT.DUPLICATE_FLAGGED,
           meta: { importLogId: log.id, sourceRow: lead.sourceRow, incomingName: lead.name },
         });
+        continue;
+      }
+
+      // Internal batch deduplication
+      if (seenInBatch.has(lead.phoneKey)) {
+        duplicates += 1;
+        internalDuplicates.push(lead);
         continue;
       }
 
@@ -241,7 +235,7 @@ export async function ingestRows({
         companyId,
       });
 
-      // Optimistic internal marking (we won't have IDs until inserted, but we block dups within this batch)
+      // Optimistic internal marking to catch duplicates in the same batch
       seenInBatch.set(lead.phoneKey, 'pending_insert');
     }
 
@@ -250,19 +244,37 @@ export async function ingestRows({
       await prisma.lead.createMany({ data: leadsToInsert });
       inserted = leadsToInsert.length;
 
-      // We need the IDs for the newly inserted leads to log their creation events
+      // We need the IDs for the newly inserted leads to log their creation events & map internal duplicates
       const newlyInserted = await prisma.lead.findMany({
         where: { importLogId: log.id },
-        select: { id: true, sourceRow: true, score: true },
+        select: { id: true, phoneKey: true, sourceRow: true, score: true },
       });
 
+      const newIdsByPhone = new Map();
+
       for (const newly of newlyInserted) {
+        newIdsByPhone.set(newly.phoneKey, newly.id);
         eventsToInsert.push({
           leadId: newly.id,
           userId: triggeredById,
           type: EVENT.LEAD_UPLOADED,
           meta: { source, spreadsheetId, sheetTab, sourceRow: newly.sourceRow, score: newly.score },
         });
+      }
+
+      // Now that we have the real IDs, process the internal batch duplicates
+      for (const dup of internalDuplicates) {
+        const realId = newIdsByPhone.get(dup.phoneKey);
+        if (realId) {
+          duplicatesToInsert.push({
+            importLogId: log.id,
+            existingLeadId: realId,
+            phone: dup.phone,
+            name: dup.name,
+            rawRow: JSON.stringify(dup),
+            sourceRow: dup.sourceRow,
+          });
+        }
       }
     }
 
