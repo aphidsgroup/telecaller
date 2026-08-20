@@ -3,6 +3,47 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { LEAD_STATUS_CATEGORY, LEAD_STATUS_LABEL } from '@/lib/constants';
+import { ChevronDown } from 'lucide-react';
+
+function MultiSelectDropdown({ options, value, onChange, placeholder = 'Any' }) {
+  const [open, setOpen] = useState(false);
+  const selected = value ? value.split(',') : [];
+
+  const toggle = (val) => {
+    const next = selected.includes(val) ? selected.filter(x => x !== val) : [...selected, val];
+    onChange(next.join(','));
+  };
+
+  return (
+    <div className="relative">
+      <div 
+        className="input flex items-center justify-between cursor-pointer"
+        onClick={() => setOpen(!open)}
+      >
+        <span className="truncate">{selected.length ? `${selected.length} selected` : placeholder}</span>
+        <ChevronDown className="w-4 h-4 text-slate-400" />
+      </div>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute z-20 top-full left-0 mt-1 w-64 max-h-60 overflow-auto bg-white border border-slate-200 shadow-xl rounded-xl p-1">
+            {options.map(o => (
+              <label key={o.value} className="flex items-center gap-2 p-2 hover:bg-slate-50 cursor-pointer rounded-lg text-sm text-slate-700">
+                <input 
+                  type="checkbox" 
+                  checked={selected.includes(o.value)} 
+                  onChange={() => toggle(o.value)} 
+                  className="rounded border-slate-300 text-brand-600 focus:ring-brand-600"
+                />
+                {o.label}
+              </label>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 const STATUSES = Object.keys(LEAD_STATUS_LABEL);
 
@@ -74,14 +115,12 @@ export default function LeadFilters({ params, telecallers, sources, projects, ci
       </div>
       <div>
         <label className="label">Disposition</label>
-        <select className="input" value={params.leadStatus || ''} onChange={(e) => apply({ leadStatus: e.target.value })}>
-          <option value="">Any outcome</option>
-          {LEAD_STATUS_CATEGORY.map((c) => (
-            <option key={c.value} value={c.value}>
-              {c.label}
-            </option>
-          ))}
-        </select>
+        <MultiSelectDropdown 
+          options={LEAD_STATUS_CATEGORY} 
+          value={params.leadStatus || ''} 
+          onChange={(val) => apply({ leadStatus: val })} 
+          placeholder="Any outcome" 
+        />
       </div>
       <div>
         <label className="label">Source</label>

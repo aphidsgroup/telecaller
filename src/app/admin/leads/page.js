@@ -33,7 +33,7 @@ function buildWhere(params) {
   if (params.project) where.project = params.project;
   if (params.city) where.city = params.city;
   if (params.flagged === '1') where.flaggedForReview = true;
-  if (params.leadStatus) where.lastLeadStatus = params.leadStatus;
+  if (params.leadStatus) where.lastLeadStatus = { in: params.leadStatus.split(',') };
   if (params.from || params.to) {
     where.createdAt = {
       ...(params.from ? { gte: new Date(`${params.from}T00:00:00.000Z`) } : {}),

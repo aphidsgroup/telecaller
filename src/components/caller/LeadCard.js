@@ -26,13 +26,23 @@ export default function LeadCard({ lead, tz }) {
   const bandBorder = band === 'Hot' ? 'border-rose-500' : band === 'Warm' ? 'border-amber-400' : 'border-slate-300';
   const bandChip = band === 'Hot' ? 'badge-hot' : band === 'Warm' ? 'badge-warm' : 'badge-cold';
 
+  const isPost = lead.isPostSiteVisit;
+  const bg = isPost ? 'bg-amber-50/60 shadow-amber-100/50' : 'bg-white';
+
   return (
-    <section className={`card overflow-hidden border-l-4 ${bandBorder}`}>
+    <section className={`card overflow-hidden border-l-4 ${bandBorder} ${bg}`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3 px-4 pt-4 pb-3">
         <div>
           <h1 className="text-xl font-black leading-tight tracking-tight text-slate-900">{lead.name}</h1>
-          <p className="mt-0.5 font-mono text-base font-semibold text-slate-600">{displayPhone(lead.phone)}</p>
+          <div className="mt-0.5 flex items-center gap-2">
+            <p className="font-mono text-base font-semibold text-slate-600">{displayPhone(lead.phone)}</p>
+            {isPost && (
+              <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-amber-900">
+                Post Site Visit
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <span className={bandChip}>{band}</span>

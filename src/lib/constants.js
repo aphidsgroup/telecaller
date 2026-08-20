@@ -27,14 +27,26 @@ export const HELD_STATUSES = [LEAD_STATUS.ACTIVE, LEAD_STATUS.IN_PROGRESS];
 export const CALL_CATEGORY = [
   { value: 'NOT_ANSWERED', label: 'Call Not Answered' },
   { value: 'AFTER_SOME_TIME', label: 'Call Me After Some Time' },
+  { value: 'AFTERNOON', label: 'Call Me Afternoon' },
+  { value: 'EVENING', label: 'Call Me Evening' },
   { value: 'TOMORROW', label: 'Call Me Tomorrow' },
+  { value: 'WEEKEND', label: 'Call Me Weekend' },
+  { value: 'MONDAY', label: 'Call Me Monday' },
   { value: 'NEXT_WEEK', label: 'Call Me Next Week' },
   { value: 'NEXT_MONTH', label: 'Call Me Next Month' },
-  { value: 'MONDAY', label: 'Call Me Monday' },
 ];
 
 // Categories that imply the prospect asked to be called back later.
-export const CALLBACK_CATEGORIES = ['AFTER_SOME_TIME', 'TOMORROW', 'NEXT_WEEK', 'NEXT_MONTH', 'MONDAY'];
+export const CALLBACK_CATEGORIES = [
+  'AFTER_SOME_TIME',
+  'AFTERNOON',
+  'EVENING',
+  'TOMORROW',
+  'WEEKEND',
+  'MONDAY',
+  'NEXT_WEEK',
+  'NEXT_MONTH'
+];
 
 export const LEAD_STATUS_CATEGORY = [
   { value: 'SEND_BROCHURE_WHATSAPP', label: 'Send Brochure on WhatsApp' },

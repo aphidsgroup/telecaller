@@ -46,8 +46,13 @@ export async function serialiseLeadForCaller(lead) {
     }
   }
 
+  const isPostSiteVisit = await prisma.disposition.count({ 
+    where: { leadId: lead.id, leadStatus: { in: ['SEND_SITE_VISIT', 'SITE_VISIT_DONE', 'QUOTATION_SENT', 'NEGOTIATING'] } } 
+  }) > 0;
+
   return {
     ...lead,
+    isPostSiteVisit,
     callClicked: lead.status === LEAD_STATUS.IN_PROGRESS,
     duplicateSources: [...new Set(duplicateSources)],
     history: history.map((h) => ({
