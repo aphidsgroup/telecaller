@@ -56,7 +56,7 @@ async function deleteSource(req, { params }) {
 }
 
 async function forceResync(req, { params }) {
-  const admin = await requireAdmin(req);
+  const admin = await requireAdmin();
   const { id } = params;
 
   try {
