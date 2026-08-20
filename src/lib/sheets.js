@@ -120,14 +120,17 @@ export async function ingestRows({
   const seenInBatch = new Map();
 
   try {
+    // Collect normalized leads
+    const parsedLeads = [];
+    const phoneKeysToQuery = [];
+    const externalKeysToQuery = [];
+
     for (const item of rows) {
-      // items are either { row, rowNumber } (Sheets API) or a bare object (webhook)
       const raw = item && item.row !== undefined ? item.row : item;
       const lead = normaliseRow(raw, headerMap, item?.rowNumber, headerRow);
 
       const sourceRow = sheetTab && lead.rowNumber ? `${sheetTab}!${lead.rowNumber}` : null;
-      const externalKey =
-        spreadsheetId && lead.rowNumber ? `${spreadsheetId}:${sheetTab || 'default'}:${lead.rowNumber}` : null;
+      const externalKey = spreadsheetId && lead.rowNumber ? `${spreadsheetId}:${sheetTab || 'default'}:${lead.rowNumber}` : null;
 
       if (!isValidPhone(lead.phone)) {
         invalid += 1;
@@ -138,91 +141,141 @@ export async function ingestRows({
       }
 
       const phoneKey = normalisePhone(lead.phone);
+      phoneKeysToQuery.push(phoneKey);
+      if (externalKey) externalKeysToQuery.push(externalKey);
 
-      // Same number twice inside one upload.
-      if (seenInBatch.has(phoneKey)) {
-        duplicates += 1;
-        await prisma.duplicateHit.create({
-          data: {
-            importLogId: log.id,
-            existingLeadId: seenInBatch.get(phoneKey),
-            phone: lead.phone,
-            name: lead.name,
-            rawRow: JSON.stringify(lead),
-            sourceRow,
-          },
-        });
-        continue;
-      }
+      parsedLeads.push({ ...lead, phoneKey, sourceRow, externalKey, score: scoreLead(lead) });
+    }
 
-      const existing = await prisma.lead.findFirst({
-        where: { phoneKey },
-        select: { id: true, name: true },
+    // Fetch existing records in bulk
+    const existingByPhone = new Map();
+    if (phoneKeysToQuery.length > 0) {
+      const existingLeads = await prisma.lead.findMany({
+        where: { phoneKey: { in: phoneKeysToQuery } },
+        select: { id: true, phoneKey: true, name: true },
         orderBy: { createdAt: 'asc' },
       });
+      for (const e of existingLeads) {
+        if (!existingByPhone.has(e.phoneKey)) existingByPhone.set(e.phoneKey, e);
+      }
+    }
 
-      if (existing) {
+    const existingByExternalKey = new Set();
+    if (externalKeysToQuery.length > 0) {
+      const existingExternals = await prisma.lead.findMany({
+        where: { externalKey: { in: externalKeysToQuery } },
+        select: { externalKey: true },
+      });
+      for (const e of existingExternals) {
+        existingByExternalKey.add(e.externalKey);
+      }
+    }
+
+    const leadsToInsert = [];
+    const duplicatesToInsert = [];
+    const eventsToInsert = [];
+
+    for (const lead of parsedLeads) {
+      // Internal batch deduplication
+      if (seenInBatch.has(lead.phoneKey)) {
         duplicates += 1;
-        seenInBatch.set(phoneKey, existing.id);
-        await prisma.duplicateHit.create({
-          data: {
-            importLogId: log.id,
-            existingLeadId: existing.id,
-            phone: lead.phone,
-            name: lead.name,
-            rawRow: JSON.stringify(lead),
-            sourceRow,
-          },
-        });
-        await logEvent(null, {
-          leadId: existing.id,
-          type: EVENT.DUPLICATE_FLAGGED,
-          meta: { importLogId: log.id, sourceRow, incomingName: lead.name },
+        duplicatesToInsert.push({
+          importLogId: log.id,
+          existingLeadId: seenInBatch.get(lead.phoneKey),
+          phone: lead.phone,
+          name: lead.name,
+          rawRow: JSON.stringify(lead),
+          sourceRow: lead.sourceRow,
         });
         continue;
       }
 
-      // externalKey keeps a re-uploaded sheet from re-creating the same row.
-      if (externalKey) {
-        const byKey = await prisma.lead.findUnique({ where: { externalKey }, select: { id: true } });
-        if (byKey) {
-          duplicates += 1;
-          continue;
-        }
+      // Check DB deduplication by phone
+      if (existingByPhone.has(lead.phoneKey)) {
+        duplicates += 1;
+        const existing = existingByPhone.get(lead.phoneKey);
+        seenInBatch.set(lead.phoneKey, existing.id);
+        
+        duplicatesToInsert.push({
+          importLogId: log.id,
+          existingLeadId: existing.id,
+          phone: lead.phone,
+          name: lead.name,
+          rawRow: JSON.stringify(lead),
+          sourceRow: lead.sourceRow,
+        });
+        
+        eventsToInsert.push({
+          leadId: existing.id,
+          type: EVENT.DUPLICATE_FLAGGED,
+          meta: { importLogId: log.id, sourceRow: lead.sourceRow, incomingName: lead.name },
+        });
+        continue;
       }
 
-      const score = scoreLead(lead);
-      const created = await prisma.lead.create({
-        data: {
-          name: lead.name,
-          phone: lead.phone,
-          phoneKey,
-          altPhone: lead.altPhone,
-          source: lead.source,
-          project: lead.project,
-          city: lead.city,
-          budget: lead.budget,
-          notes: lead.notes,
-          extraData: lead.extraData,
-          dateAdded: lead.dateAdded,
-          score,
-          priority: score >= 55 ? 1 : 0,
-          status: LEAD_STATUS.UNASSIGNED,
-          importLogId: log.id,
-          sourceRow,
-          externalKey,
-          companyId,
-        },
-        select: { id: true },
-      });
-      seenInBatch.set(phoneKey, created.id);
-      inserted += 1;
+      // Check externalKey duplicates (re-runs of same sheet)
+      if (lead.externalKey && existingByExternalKey.has(lead.externalKey)) {
+        duplicates += 1;
+        continue;
+      }
 
-      await logEvent(null, {
-        leadId: created.id,
-        userId: triggeredById,
-        type: EVENT.LEAD_UPLOADED,
-        meta: { source, spreadsheetId, sheetTab, sourceRow, score },
+      // Mark as fresh to insert
+      leadsToInsert.push({
+        name: lead.name,
+        phone: lead.phone,
+        phoneKey: lead.phoneKey,
+        altPhone: lead.altPhone,
+        source: lead.source,
+        project: lead.project,
+        city: lead.city,
+        budget: lead.budget,
+        notes: lead.notes,
+        extraData: lead.extraData,
+        dateAdded: lead.dateAdded,
+        score: lead.score,
+        priority: lead.score >= 55 ? 1 : 0,
+        status: LEAD_STATUS.UNASSIGNED,
+        importLogId: log.id,
+        sourceRow: lead.sourceRow,
+        externalKey: lead.externalKey,
+        companyId,
+      });
+
+      // Optimistic internal marking (we won't have IDs until inserted, but we block dups within this batch)
+      seenInBatch.set(lead.phoneKey, 'pending_insert');
+    }
+
+    // Execute Bulk Inserts
+    if (leadsToInsert.length > 0) {
+      await prisma.lead.createMany({ data: leadsToInsert });
+      inserted = leadsToInsert.length;
+
+      // We need the IDs for the newly inserted leads to log their creation events
+      const newlyInserted = await prisma.lead.findMany({
+        where: { importLogId: log.id },
+        select: { id: true, sourceRow: true, score: true },
+      });
+
+      for (const newly of newlyInserted) {
+        eventsToInsert.push({
+          leadId: newly.id,
+          userId: triggeredById,
+          type: EVENT.LEAD_UPLOADED,
+          meta: { source, spreadsheetId, sheetTab, sourceRow: newly.sourceRow, score: newly.score },
+        });
+      }
+    }
+
+    if (duplicatesToInsert.length > 0) {
+      await prisma.duplicateHit.createMany({ data: duplicatesToInsert });
+    }
+
+    if (eventsToInsert.length > 0) {
+      await prisma.leadEvent.createMany({
+        data: eventsToInsert.map(e => ({
+          ...e,
+          meta: e.meta ? JSON.stringify(e.meta) : null
+        }))
       });
     }
 
