@@ -311,7 +311,7 @@ export async function syncFromGoogleSheet({ triggeredById = null, companyId = nu
     values = res.data.values || [];
   } else {
     // Attempt public CSV fetch
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&headers=1&sheet=${encodeURIComponent(tab)}`;
     const res = await fetch(csvUrl);
     if (!res.ok) throw new Error(`Failed to fetch public sheet (${res.status}). Please make sure it is set to "Anyone with the link can view"`);
     const text = await res.text();
