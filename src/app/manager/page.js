@@ -60,6 +60,26 @@ export default async function ManagerDashboard() {
     })
   ]);
 
+  // Serialize dates — Next.js App Router cannot pass Date objects to 'use client' components.
+  // Prisma returns Date instances; we must convert them to ISO strings first.
+  function serializeDisp(disp) {
+    return {
+      ...disp,
+      submittedAt: disp.submittedAt instanceof Date ? disp.submittedAt.toISOString() : disp.submittedAt,
+    };
+  }
+  function serializeLead(lead) {
+    return {
+      ...lead,
+      createdAt: lead.createdAt instanceof Date ? lead.createdAt.toISOString() : lead.createdAt,
+      updatedAt: lead.updatedAt instanceof Date ? lead.updatedAt.toISOString() : lead.updatedAt,
+      dispositions: lead.dispositions ? lead.dispositions.map(serializeDisp) : [],
+    };
+  }
+
+  const serializedSiteVisitLeads = siteVisitLeads.map(serializeLead);
+  const serializedRecentLeads = recentLeads.map(serializeLead);
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3 mb-6 mt-2">
@@ -112,13 +132,13 @@ export default async function ManagerDashboard() {
         </div>
       )}
 
-      <ManagerSiteVisitsPipeline initialLeads={siteVisitLeads} users={users} />
+      <ManagerSiteVisitsPipeline initialLeads={serializedSiteVisitLeads} users={users} />
 
-      {recentLeads.length > 0 && (
+      {serializedRecentLeads.length > 0 && (
         <div className="mt-8">
           <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">Recently Added Leads</h2>
           <div className="space-y-3">
-            {recentLeads.map(lead => (
+            {serializedRecentLeads.map(lead => (
               <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} />
             ))}
           </div>
