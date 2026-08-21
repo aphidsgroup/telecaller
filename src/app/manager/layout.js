@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { ROLE } from '@/lib/constants';
 import ManagerNav from '@/components/manager/ManagerNav';
+import ManagerHeader from '@/components/manager/ManagerHeader';
 
 export default async function ManagerLayout({ children }) {
   const user = await getCurrentUser();
@@ -12,7 +13,8 @@ export default async function ManagerLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <main className="flex-1 pb-20">
+      <ManagerHeader user={{ name: user.name }} />
+      <main className="flex-1 pb-20 relative">
         {children}
       </main>
       <ManagerNav />
