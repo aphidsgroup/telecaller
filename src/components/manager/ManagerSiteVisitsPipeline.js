@@ -42,6 +42,16 @@ export default function ManagerSiteVisitsPipeline({ initialLeads, users }) {
               <div>
                 <div className="font-bold text-slate-800">{lead.name || 'Unknown'}</div>
                 <div className="text-sm font-semibold text-slate-500">{lead.phone}</div>
+                {lead.dispositions?.[0]?.notes && (
+                  <div className="text-[11px] text-slate-600 mt-2 italic border-l-2 border-brand-200 pl-2">
+                    "{lead.dispositions[0].notes}"
+                  </div>
+                )}
+                {lead.dispositions?.[0]?.audioBase64 && (
+                  <div className="mt-2">
+                    <audio src={lead.dispositions[0].audioBase64} controls className="h-8 max-w-[200px]" />
+                  </div>
+                )}
               </div>
               <span className="inline-block px-2 py-1 bg-amber-100 text-amber-700 rounded-md text-[10px] font-bold uppercase">
                 {leadStatusCategoryLabel(lead.lastLeadStatus)}

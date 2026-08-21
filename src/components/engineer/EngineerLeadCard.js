@@ -1,12 +1,96 @@
 'use client';
 
-import { useState } from 'react';
-import { MapPin, Phone, User, Calendar, CheckCircle, Navigation } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { MapPin, Phone, User, Calendar, CheckCircle, Navigation, Mic, Square, Trash2 } from 'lucide-react';
 import { LEAD_STATUS_CATEGORY } from '@/lib/constants';
+
+function AudioRecorder({ audioBase64, onAudioData, disabled }) {
+  const [recording, setRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = () => {
+          onAudioData(reader.result);
+        };
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setRecording(true);
+    } catch (err) {
+      alert('Microphone access denied or unavailable.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
+  };
+
+  if (audioBase64) {
+    return (
+      <div className="mt-2 flex items-center gap-2 rounded-lg bg-emerald-50 p-2 border border-emerald-100">
+        <audio src={audioBase64} controls className="h-8 max-w-[200px]" />
+        <button
+          type="button"
+          onClick={() => onAudioData('')}
+          className="p-2 text-rose-500 hover:bg-rose-100 rounded-full transition-colors"
+          title="Delete Recording"
+          disabled={disabled}
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2">
+      {recording ? (
+        <button
+          type="button"
+          onClick={stopRecording}
+          className="flex items-center gap-2 rounded-lg bg-rose-100 px-4 py-2 text-sm font-bold text-rose-700 animate-pulse border border-rose-200 w-full justify-center"
+        >
+          <Square size={16} fill="currentColor" />
+          Stop Recording...
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={startRecording}
+          disabled={disabled}
+          className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200 border border-slate-200 disabled:opacity-50 w-full justify-center transition-colors"
+        >
+          <Mic size={16} />
+          Record Voice Note
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function EngineerLeadCard({ lead, onUpdate }) {
   const [status, setStatus] = useState('');
   const [notes, setNotes] = useState('');
+  const [audioBase64, setAudioBase64] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function submit() {
@@ -17,7 +101,7 @@ export default function EngineerLeadCard({ lead, onUpdate }) {
       const res = await fetch('/api/engineer/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId: lead.id, leadStatus: status, notes })
+        body: JSON.stringify({ leadId: lead.id, leadStatus: status, notes, audioBase64 })
       });
       if (!res.ok) throw new Error(await res.text());
       onUpdate(lead.id); // trigger refresh
@@ -61,6 +145,23 @@ export default function EngineerLeadCard({ lead, onUpdate }) {
         )}
       </div>
 
+      {/* Telecaller Notes & Audio */}
+      {(lead.dispositions?.[0]?.notes || lead.dispositions?.[0]?.audioBase64) && (
+        <div className="mt-4 p-3 bg-brand-50 rounded-xl border border-brand-100">
+          <h4 className="text-[10px] font-bold text-brand-600 uppercase tracking-wide mb-2">Telecaller Notes</h4>
+          {lead.dispositions[0].notes && (
+            <div className="text-xs text-slate-700 italic">
+              "{lead.dispositions[0].notes}"
+            </div>
+          )}
+          {lead.dispositions[0].audioBase64 && (
+            <div className="mt-2">
+              <audio src={lead.dispositions[0].audioBase64} controls className="h-8 max-w-[200px]" />
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="mt-5 space-y-3">
         <div>
           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">After Visit Status</label>
@@ -86,10 +187,15 @@ export default function EngineerLeadCard({ lead, onUpdate }) {
           />
         </div>
 
+        <div>
+          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Voice Note (Optional)</label>
+          <AudioRecorder audioBase64={audioBase64} onAudioData={setAudioBase64} disabled={busy} />
+        </div>
+
         <button 
           onClick={submit} 
           disabled={busy || !status} 
-          className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-brand-500/20 active:scale-[0.98] mt-2"
+          className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-brand-500/20 active:scale-[0.98] mt-4"
         >
           {busy ? 'Saving...' : 'Save & Update Lead'}
         </button>

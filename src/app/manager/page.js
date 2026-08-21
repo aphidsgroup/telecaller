@@ -36,7 +36,10 @@ export default async function ManagerDashboard() {
       where: { ...companyFilter, lastLeadStatus: { in: ['SITE_VISIT_DONE', 'SEND_SITE_VISIT'] }, status: { not: 'CLOSED' } },
       orderBy: { updatedAt: 'desc' },
       take: 20,
-      select: { id: true, name: true, phone: true, lastLeadStatus: true, assignedToId: true }
+      select: { 
+        id: true, name: true, phone: true, lastLeadStatus: true, assignedToId: true,
+        dispositions: { take: 1, orderBy: { submittedAt: 'desc' }, select: { notes: true, audioBase64: true } }
+      }
     }),
     prisma.lead.findMany({
       where: { source: 'MANUAL', ...companyFilter },
@@ -45,7 +48,8 @@ export default async function ManagerDashboard() {
       select: {
         id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, assignedToId: true,
         company: { select: { name: true } },
-        assignedTo: { select: { name: true, role: true } }
+        assignedTo: { select: { name: true, role: true } },
+        dispositions: { take: 1, orderBy: { submittedAt: 'desc' }, select: { notes: true, audioBase64: true } }
       }
     }),
     prisma.user.findMany({

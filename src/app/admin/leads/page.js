@@ -57,7 +57,11 @@ export default async function LeadsPage({ searchParams }) {
       orderBy: [{ updatedAt: 'desc' }],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      include: { assignedTo: { select: { id: true, name: true } }, company: { select: { name: true } } },
+      include: { 
+        assignedTo: { select: { id: true, name: true } }, 
+        company: { select: { name: true } },
+        dispositions: { take: 1, orderBy: { submittedAt: 'desc' }, select: { notes: true, audioBase64: true } }
+      },
     }),
     prisma.lead.count({ where }),
     prisma.user.findMany({

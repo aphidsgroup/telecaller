@@ -63,6 +63,16 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
           {lead.createdAt && (
             <div className="text-[10px] text-slate-400 mt-1">{formatDateTime(lead.createdAt || lead.updatedAt)}</div>
           )}
+          {lead.dispositions?.[0]?.notes && (
+            <div className="text-[11px] text-slate-600 mt-2 italic border-l-2 border-brand-200 pl-2">
+              "{lead.dispositions[0].notes}"
+            </div>
+          )}
+          {lead.dispositions?.[0]?.audioBase64 && (
+            <div className="mt-2">
+              <audio src={lead.dispositions[0].audioBase64} controls className="h-8 max-w-[200px]" />
+            </div>
+          )}
         </div>
         <div className="text-right">
           <span className={`inline-block px-2 py-1 rounded-md text-[10px] font-bold uppercase ${

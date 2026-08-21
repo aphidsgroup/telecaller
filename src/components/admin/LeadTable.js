@@ -140,6 +140,16 @@ export default function LeadTable({ leads, telecallers, tz }) {
                         {LEAD_STATUS_CATEGORY.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                       </select>
                       <div className="text-[11px] text-slate-500 mt-1">{callCategoryLabel(lead.lastCallCategory)}</div>
+                      {lead.dispositions?.[0]?.notes && (
+                        <div className="text-[10px] text-slate-600 mt-1.5 italic border-l-2 border-brand-200 pl-1.5 max-w-[150px] line-clamp-2" title={lead.dispositions[0].notes}>
+                          "{lead.dispositions[0].notes}"
+                        </div>
+                      )}
+                      {lead.dispositions?.[0]?.audioBase64 && (
+                        <div className="mt-1.5">
+                          <audio src={lead.dispositions[0].audioBase64} controls className="h-6 w-[150px]" />
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <span className="text-slate-400">Not called yet</span>

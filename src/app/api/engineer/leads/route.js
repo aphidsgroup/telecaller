@@ -11,6 +11,7 @@ export const GET = route(async (req) => {
   const leads = await prisma.lead.findMany({
     where: { assignedToId: user.id },
     orderBy: { assignedAt: 'desc' },
+    include: { dispositions: { take: 1, orderBy: { submittedAt: 'desc' }, select: { notes: true, audioBase64: true } } }
   });
 
   return ok({ leads });
@@ -20,7 +21,7 @@ export const POST = route(async (req) => {
   const user = await requireEngineer();
   const body = await readJson(req);
 
-  const { leadId, leadStatus, notes } = body;
+  const { leadId, leadStatus, notes, audioBase64 } = body;
 
   if (!leadId || !leadStatus) return fail(400, 'Missing fields');
 
@@ -38,6 +39,7 @@ export const POST = route(async (req) => {
     callCategory: 'SITE_VISIT_OUTCOME',
     leadStatus,
     notes: notes || 'Updated by Site Engineer',
+    audioBase64: audioBase64 || null,
     queuedOffline: false,
   });
 
