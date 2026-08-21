@@ -50,7 +50,7 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
         <h2 className="text-lg font-black text-slate-800 mb-6">Add Manual Lead</h2>
         
         {message && (
-          <div className={"p-3 rounded-xl mb-6 text-sm font-bold \"}>
+          <div className={`p-3 rounded-xl mb-6 text-sm font-bold ${message.includes('success') ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
             {message}
           </div>
         )}

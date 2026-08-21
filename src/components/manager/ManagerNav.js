@@ -19,8 +19,8 @@ export default function ManagerNav() {
         const active = pathname === n.href;
         const Icon = n.icon;
         return (
-          <Link key={n.name} href={n.href} className={"flex flex-col items-center p-2 rounded-xl transition-colors \"}>
-            <Icon className={"h-6 w-6 mb-1 \"} />
+          <Link key={n.name} href={n.href} className={`flex flex-col items-center p-2 rounded-xl transition-colors ${active ? 'text-brand-600' : 'text-slate-400 hover:text-slate-600'}`}>
+            <Icon className={`h-6 w-6 mb-1 ${active ? 'stroke-[2.5px]' : ''}`} />
             <span className="text-[10px] font-bold tracking-wide uppercase">{n.name}</span>
           </Link>
         );
