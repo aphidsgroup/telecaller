@@ -7,5 +7,7 @@ export const dynamic = 'force-dynamic';
 export default async function Home() {
   const user = await getCurrentUser();
   if (!user) redirect('/login');
-  redirect(user.role === ROLE.ADMIN ? '/admin' : '/caller');
+  if (user.role === ROLE.ADMIN) redirect('/admin');
+  if (user.role === ROLE.MANAGER) redirect('/manager');
+  redirect('/caller');
 }

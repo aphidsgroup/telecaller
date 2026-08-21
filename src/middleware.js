@@ -38,17 +38,21 @@ export async function middleware(req) {
   const role = session.role;
 
   // Role separation is what makes every timestamp in this app meaningful.
+  const homePath = role === 'ADMIN' ? '/admin' : (role === 'MANAGER' ? '/manager' : '/caller');
+
   if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && role !== 'ADMIN') {
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ ok: false, error: 'Admins only' }, { status: 403 });
-    }
-    return NextResponse.redirect(new URL('/caller', req.url));
+    if (pathname.startsWith('/api/')) return NextResponse.json({ ok: false, error: 'Admins only' }, { status: 403 });
+    return NextResponse.redirect(new URL(homePath, req.url));
   }
+
+  if ((pathname.startsWith('/manager') || pathname.startsWith('/api/manager')) && role !== 'MANAGER') {
+    if (pathname.startsWith('/api/')) return NextResponse.json({ ok: false, error: 'Managers only' }, { status: 403 });
+    return NextResponse.redirect(new URL(homePath, req.url));
+  }
+
   if ((pathname.startsWith('/caller') || pathname.startsWith('/api/telecaller')) && role !== 'TELECALLER') {
-    if (pathname.startsWith('/api/')) {
-      return NextResponse.json({ ok: false, error: 'Telecallers only' }, { status: 403 });
-    }
-    return NextResponse.redirect(new URL('/admin', req.url));
+    if (pathname.startsWith('/api/')) return NextResponse.json({ ok: false, error: 'Telecallers only' }, { status: 403 });
+    return NextResponse.redirect(new URL(homePath, req.url));
   }
 
   return NextResponse.next();
