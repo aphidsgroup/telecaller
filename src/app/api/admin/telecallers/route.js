@@ -5,11 +5,15 @@ import { ROLE } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
-export const GET = route(async () => {
+export const GET = route(async (req) => {
   await requireAdmin();
+  const roleParam = req.nextUrl.searchParams.get('role');
+  
   const users = await prisma.user.findMany({
-    where: { role: { in: [ROLE.TELECALLER, ROLE.MANAGER] } },
-    select: { id: true, name: true, email: true, isActive: true, dailyTarget: true, lastSeenAt: true, companyId: true, company: { select: { name: true } } },
+    where: { 
+      role: roleParam ? roleParam : { in: [ROLE.TELECALLER, ROLE.MANAGER, ROLE.SITE_ENGINEER] } 
+    },
+    select: { id: true, name: true, email: true, role: true, isActive: true, dailyTarget: true, lastSeenAt: true, companyId: true, company: { select: { name: true } } },
     orderBy: { name: 'asc' },
   });
   const companies = await prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } });
@@ -26,12 +30,14 @@ export const POST = route(async (req) => {
   const existing = await prisma.user.findUnique({ where: { email: normalised } });
   if (existing) return fail(409, 'A user with that email already exists');
 
+  const validRoles = [ROLE.ADMIN, ROLE.MANAGER, ROLE.TELECALLER, ROLE.SITE_ENGINEER];
+  
   const user = await prisma.user.create({
     data: {
       name: String(name).trim(),
       email: normalised,
       phone: phone ? String(phone).trim() : null,
-      role: [ROLE.ADMIN, ROLE.MANAGER, ROLE.TELECALLER].includes(role) ? role : ROLE.TELECALLER,
+      role: validRoles.includes(role) ? role : ROLE.TELECALLER,
       dailyTarget: Number(dailyTarget) || 60,
       passwordHash: await hashPassword(String(password)),
       companyId: companyId || null,

@@ -17,7 +17,7 @@ export default async function TelecallersPage() {
   const now = new Date();
 
   const users = await prisma.user.findMany({
-    where: { role: { in: [ROLE.TELECALLER, ROLE.MANAGER] } },
+    where: { role: ROLE.TELECALLER },
     orderBy: { name: 'asc' },
     select: {
       id: true, name: true, email: true, phone: true, isActive: true, dailyTarget: true,

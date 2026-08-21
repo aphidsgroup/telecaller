@@ -17,6 +17,8 @@ const NAV = [
   { href: '/admin/companies', label: 'Companies', icon: Building },
   { href: '/admin/leads', label: 'Leads', icon: FileText },
   { href: '/admin/telecallers', label: 'Telecallers', icon: Users },
+  { href: '/admin/managers', label: 'Managers', icon: UsersRound },
+  { href: '/admin/engineers', label: 'Site Engineers', icon: UsersRound },
   { href: '/admin/imports', label: 'Sheet Sync', icon: CloudUpload },
   { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
   { href: '/admin/settings', label: 'Settings', icon: Settings },

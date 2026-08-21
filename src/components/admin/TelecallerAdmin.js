@@ -6,17 +6,17 @@ import { ROLE } from '@/lib/constants';
 
 const BLANK = { name: '', email: '', phone: '', password: '', dailyTarget: 60, role: 'TELECALLER' };
 
-export default function TelecallerAdmin() {
+export default function TelecallerAdmin({ targetRole = 'TELECALLER' }) {
   const router = useRouter();
   const [users, setUsers] = useState([]);
   const [companies, setCompanies] = useState([]);
-  const [form, setForm] = useState(BLANK);
+  const [form, setForm] = useState({ ...BLANK, role: targetRole });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [open, setOpen] = useState(false);
 
   async function refresh() {
-    const data = await fetch('/api/admin/telecallers').then((r) => r.json());
+    const data = await fetch('/api/admin/telecallers?role=' + targetRole).then((r) => r.json());
     if (data.ok) {
       setUsers(data.users);
       if (data.companies) setCompanies(data.companies);
@@ -40,7 +40,8 @@ export default function TelecallerAdmin() {
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'Could not create the user');
       setMessage(`${data.user.name} can now sign in.`);
-      setForm(BLANK);
+      setForm({ ...BLANK, role: targetRole });
+      setOpen(false);
       await refresh();
       router.refresh();
     } catch (err) {
