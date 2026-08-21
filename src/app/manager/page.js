@@ -199,7 +199,7 @@ export default async function ManagerDashboard() {
           </h2>
           <div className="space-y-3">
             {serializedContactedByEngineer.map(lead => (
-              <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} />
+              <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} neutralDropdowns={true} />
             ))}
           </div>
         </div>
@@ -213,7 +213,7 @@ export default async function ManagerDashboard() {
           </h2>
           <div className="space-y-3">
             {serializedContactedByTelecaller.map(lead => (
-              <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} />
+              <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} neutralDropdowns={true} />
             ))}
           </div>
         </div>
@@ -224,7 +224,7 @@ export default async function ManagerDashboard() {
           <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">Recently Added (Not Contacted)</h2>
           <div className="space-y-3">
             {serializedRecentLeads.map(lead => (
-              <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} />
+              <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} neutralDropdowns={true} />
             ))}
           </div>
         </div>

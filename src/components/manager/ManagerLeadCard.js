@@ -5,13 +5,17 @@ import { Phone, ChevronDown } from 'lucide-react';
 import { LEAD_STATUS_CATEGORY, leadStatusCategoryLabel, LEAD_STATUS_LABEL } from '@/lib/constants';
 import { formatDateTime } from '@/lib/format';
 
-export default function ManagerLeadCard({ initialLead, users, showCompany = false }) {
+export default function ManagerLeadCard({ initialLead, users, showCompany = false, neutralDropdowns = false }) {
   const [lead, setLead] = useState(initialLead);
   const [assigning, setAssigning] = useState(false);
   const [updating, setUpdating] = useState(false);
+  
+  const [selectedAssignee, setSelectedAssignee] = useState(neutralDropdowns ? '' : (initialLead.assignedToId || ''));
+  const [selectedStatus, setSelectedStatus] = useState(neutralDropdowns ? '' : (initialLead.lastLeadStatus || ''));
 
   async function handleAssign(userId) {
     setAssigning(true);
+    setSelectedAssignee(userId);
     try {
       const res = await fetch('/api/manager/assign', {
         method: 'POST',
@@ -32,6 +36,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
 
   async function handleStatusChange(statusValue) {
     setUpdating(true);
+    setSelectedStatus(statusValue);
     try {
       const res = await fetch(`/api/manager/leads/${lead.id}`, {
         method: 'PATCH',
@@ -116,7 +121,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
           <div className="relative">
             <select 
               disabled={assigning}
-              value={lead.assignedToId || ''}
+              value={selectedAssignee}
               onChange={(e) => handleAssign(e.target.value)}
               className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
             >
@@ -141,7 +146,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
           <div className="relative">
             <select 
               disabled={updating}
-              value={lead.lastLeadStatus || ''}
+              value={selectedStatus}
               onChange={(e) => handleStatusChange(e.target.value)}
               className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
             >

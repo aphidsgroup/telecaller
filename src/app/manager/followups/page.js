@@ -107,7 +107,7 @@ export default async function ManagerFollowupsPage({ searchParams }) {
           <div className="text-center p-8 text-slate-400">No active follow-ups found.</div>
         ) : (
           serializedLeads.map(lead => (
-            <ManagerLeadCard key={lead.id} initialLead={lead} users={systemUsers} showCompany={!user.companyId} />
+            <ManagerLeadCard key={lead.id} initialLead={lead} users={systemUsers} showCompany={!user.companyId} neutralDropdowns={true} />
           ))
         )}
       </div>

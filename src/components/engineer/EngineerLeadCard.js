@@ -97,6 +97,7 @@ function AudioRecorder({ audioBase64, onAudioData, disabled }) {
 }
 
 export default function EngineerLeadCard({ lead, onUpdate, isUpdateMode = false }) {
+  const [expanded, setExpanded] = useState(!isUpdateMode);
   const [status, setStatus] = useState('');
   const [notes, setNotes] = useState('');
   const [audioBase64, setAudioBase64] = useState('');
@@ -140,19 +141,46 @@ export default function EngineerLeadCard({ lead, onUpdate, isUpdateMode = false 
         </div>
       </div>
 
-      <div className="space-y-2 mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
-        <div className="flex items-start gap-2 text-sm text-slate-700">
-          <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-          <span>{address}</span>
-        </div>
-        
-        {typeOfLead && (
-          <div className="flex items-start gap-2 text-sm text-slate-700">
-            <CheckCircle className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-            <span>{typeOfLead}</span>
+      {!expanded ? (
+        <div className="mt-3 border-t border-slate-100 pt-3">
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Last Updated Status</span>
+              <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md inline-block mt-1 w-fit">
+                {lead.lastLeadStatus ? lead.lastLeadStatus.replace(/_/g, ' ') : 'N/A'}
+              </span>
+            </div>
+            {lead.updatedAt && (
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Time</span>
+                <span className="text-xs font-medium text-slate-500 mt-1">
+                  {new Date(lead.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                </span>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+          <button 
+            onClick={() => setExpanded(true)}
+            className="w-full bg-brand-50 text-brand-700 font-bold text-sm px-4 py-2.5 rounded-xl hover:bg-brand-100 transition-colors"
+          >
+            Expand to Update Again
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2 mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+            <div className="flex items-start gap-2 text-sm text-slate-700">
+              <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+              <span>{address}</span>
+            </div>
+            
+            {typeOfLead && (
+              <div className="flex items-start gap-2 text-sm text-slate-700">
+                <CheckCircle className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                <span>{typeOfLead}</span>
+              </div>
+            )}
+          </div>
 
       {/* Telecaller Notes & Audio */}
       {(lead.dispositions?.[0]?.notes || lead.dispositions?.[0]?.audioBase64) && (
@@ -209,6 +237,8 @@ export default function EngineerLeadCard({ lead, onUpdate, isUpdateMode = false 
           {busy ? 'Saving...' : isUpdateMode ? 'Update Status Again' : 'Save & Update Status'}
         </button>
       </div>
+      </>
+      )}
     </div>
   );
 }

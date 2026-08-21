@@ -288,7 +288,7 @@ export default function DispositionForm({
       </fieldset>
 
       {/* Sticky submit */}
-      <div className="safe-bottom sticky bottom-0 border-t border-slate-100 bg-white/95 backdrop-blur px-4 pt-3 pb-4">
+      <div className="safe-bottom sticky bottom-0 border-t border-slate-100 bg-white/95 backdrop-blur px-4 pt-3 pb-8">
         <button
           type="submit"
           className="btn-primary w-full py-4 text-base"

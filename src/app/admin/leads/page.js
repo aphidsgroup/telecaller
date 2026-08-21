@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import LeadFilters from '@/components/admin/LeadFilters';
 import BulkLeadAdder from '@/components/admin/BulkLeadAdder';
 import LeadTable from '@/components/admin/LeadTable';
+import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
 import { ROLE } from '@/lib/constants';
 import { normalisePhone } from '@/lib/format';
 import { getSettings, str } from '@/lib/settings';
@@ -48,10 +49,11 @@ export default async function LeadsPage({ searchParams }) {
   const params = (await searchParams) || {};
   const page = Math.max(1, Number(params.page) || 1);
   const where = buildWhere(params);
+  
   const settings = await getSettings();
   const tz = str(settings, 'company.timezone');
 
-  const [leads, total, recentTelecallerDisps, recentEngineerDisps, telecallers, sources, projects, cities, companies] = await Promise.all([
+  const [leads, total, recentTelecallerDisps, recentEngineerDisps, systemUsers, sources, projects, cities, companies] = await Promise.all([
     prisma.lead.findMany({
       where,
       orderBy: [{ updatedAt: 'desc' }],
@@ -93,8 +95,8 @@ export default async function LeadsPage({ searchParams }) {
       }
     }) : Promise.resolve([]),
     prisma.user.findMany({
-      where: { role: ROLE.TELECALLER },
-      select: { id: true, name: true, isActive: true },
+      where: { role: { in: ['TELECALLER', 'SITE_ENGINEER'] } },
+      select: { id: true, name: true, role: true, isActive: true },
       orderBy: { name: 'asc' },
     }),
     prisma.lead.findMany({ distinct: ['source'], select: { source: true }, take: 60 }),
@@ -139,6 +141,8 @@ export default async function LeadsPage({ searchParams }) {
     Object.entries(params).filter(([k, v]) => v && k !== 'page').map(([k, v]) => [k, String(v)])
   );
 
+  const telecallers = systemUsers.filter(u => u.role === 'TELECALLER');
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -172,7 +176,11 @@ export default async function LeadsPage({ searchParams }) {
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             Recently Updated by Site Engineers
           </h2>
-          <LeadTable telecallers={telecallers} leads={serializedRecentEngineer} tz={tz} />
+          <div className="space-y-3">
+            {serializedRecentEngineer.map(lead => (
+              <ManagerLeadCard key={lead.id} initialLead={lead} users={systemUsers} showCompany={true} neutralDropdowns={true} />
+            ))}
+          </div>
         </div>
       )}
 
@@ -182,7 +190,11 @@ export default async function LeadsPage({ searchParams }) {
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             Recently Updated by Telecallers
           </h2>
-          <LeadTable telecallers={telecallers} leads={serializedRecentTelecaller} tz={tz} />
+          <div className="space-y-3">
+            {serializedRecentTelecaller.map(lead => (
+              <ManagerLeadCard key={lead.id} initialLead={lead} users={systemUsers} showCompany={true} neutralDropdowns={true} />
+            ))}
+          </div>
         </div>
       )}
 
