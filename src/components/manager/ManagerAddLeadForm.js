@@ -106,6 +106,7 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
             <select className="input" value={form.funding} onChange={e => setForm({...form, funding: e.target.value})}>
               <option value="Cash">Cash</option>
               <option value="Loan">Loan</option>
+              <option value="Cash and Loan">Cash and Loan</option>
               <option value="Not Decided">Not Decided</option>
             </select>
           </div>
