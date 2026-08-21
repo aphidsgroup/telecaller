@@ -12,7 +12,8 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
   
   const [form, setForm] = useState({
     companyId: userCompanyId || (companies.length > 0 ? companies[0].id : ''),
-    typeOfLead: 'Construction: Labour Contract',
+    typeOfLead: '',
+    floor: '',
     phone: '',
     name: '',
     locationArea: '',

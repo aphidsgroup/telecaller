@@ -18,7 +18,7 @@ import { Phone, PhoneOff, RefreshCw, Clock, WifiOff } from 'lucide-react';
 
 const EMPTY_FORM = {
   callCategory: '', leadStatus: '', notes: '', audioBase64: '',
-  clientName: '', locationArea: '', builtUpArea: '', typeOfLead: '', funding: '', starting: '',
+  clientName: '', locationArea: '', builtUpArea: '', typeOfLead: '', funding: '', starting: '', floor: '',
 };
 
 export default function CallerWorkspace({ user }) {
@@ -182,6 +182,7 @@ export default function CallerWorkspace({ user }) {
         typeOfLead: form.typeOfLead || null,
         funding: form.funding || null,
         starting: form.starting || null,
+        floor: form.floor || null,
       },
     };
 
