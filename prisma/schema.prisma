@@ -127,6 +127,13 @@ model Lead {
   sourceRow   String? // "Sheet1!A23" for traceability back to the sheet
   externalKey String?    @unique // spreadsheetId:tab:rowNumber - stops re-import churn
 
+  // Immediate Follow-up tracking
+  followupMessage      String?
+  followupRequestedAt  DateTime?
+  followupRequestedBy  String?
+  followupAcceptedAt   DateTime?
+  followupDeclinedAt   DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

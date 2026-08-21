@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { MapPin, CheckCircle } from 'lucide-react';
 import EngineerLeadCard from '@/components/engineer/EngineerLeadCard';
+import FollowupNotifier from '@/components/shared/FollowupNotifier';
 
 export default function EngineerDashboard() {
   const [leads, setLeads] = useState([]);
@@ -36,7 +37,14 @@ export default function EngineerDashboard() {
     fetchLeads(); // Refetch so it moves to updated list
   };
 
-  const pendingLeads = leads.filter(l => !l.dispositions.some(d => d.userId === userId));
+  const pendingLeads = leads
+    .filter(l => !l.dispositions.some(d => d.userId === userId))
+    .sort((a, b) => {
+      // Prioritize hot transfers
+      if (a.followupAcceptedAt && !b.followupAcceptedAt) return -1;
+      if (!a.followupAcceptedAt && b.followupAcceptedAt) return 1;
+      return 0;
+    });
   const updatedLeads = leads.filter(l => l.dispositions.some(d => d.userId === userId));
 
   return (
@@ -65,6 +73,8 @@ export default function EngineerDashboard() {
             </div>
           ) : (
             <div className="space-y-8">
+              <FollowupNotifier />
+              
               {pendingLeads.length > 0 && (
                 <div>
                   <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">Pending Action</h2>

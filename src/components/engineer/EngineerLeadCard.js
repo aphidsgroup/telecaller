@@ -130,6 +130,12 @@ export default function EngineerLeadCard({ lead, onUpdate, isUpdateMode = false 
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-4">
       <div className="flex justify-between items-start mb-3">
         <div>
+          {lead.followupAcceptedAt && lead.followupMessage && !isUpdateMode && (
+            <div className="mb-2 bg-rose-50 border border-rose-100 p-2.5 rounded-lg">
+              <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wide">Hot Transfer Note</p>
+              <p className="text-xs text-rose-900 font-medium italic mt-0.5">&quot;{lead.followupMessage}&quot;</p>
+            </div>
+          )}
           <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
             <User className="w-4 h-4 text-brand-500" />
             {lead.name || 'Unknown'}

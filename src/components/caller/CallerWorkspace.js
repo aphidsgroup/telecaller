@@ -265,6 +265,16 @@ export default function CallerWorkspace({ user }) {
           <>
             <LeadCard lead={lead} tz={config.timezone} />
 
+            {lead.followupAcceptedAt && lead.followupMessage && (
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 shadow-sm">
+                <p className="text-[10px] font-bold text-rose-700 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                  Hot Transfer Note
+                </p>
+                <p className="text-sm text-slate-800 font-medium italic">&quot;{lead.followupMessage}&quot;</p>
+              </div>
+            )}
+
             {/* Step 1 — Call */}
             <div className="card overflow-hidden">
               <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">

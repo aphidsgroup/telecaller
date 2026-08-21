@@ -195,6 +195,11 @@ export async function submitDisposition({
       lastCallCategory: callCategory,
       lastLeadStatus: leadStatus,
       inProgressAt: null,
+      // clear hot transfer flags
+      followupRequestedAt: null,
+      followupAcceptedAt: null,
+      followupDeclinedAt: null,
+      followupMessage: null,
       // a fresh disposition supersedes any stale-lead flag
       flaggedForReview: false,
       flagReason: null,

@@ -10,6 +10,7 @@ const LEAD_SELECT = {
   callClickedAt: true, inProgressAt: true, lastContactedAt: true, followUpAt: true,
   attemptCount: true, lastCallCategory: true, lastLeadStatus: true, createdAt: true,
   flaggedForReview: true, flagReason: true,
+  followupMessage: true, followupRequestedAt: true, followupRequestedBy: true, followupAcceptedAt: true,
   duplicates: { select: { id: true, importLog: { select: { spreadsheetId: true, sheetTab: true } } } }
 };
 
@@ -79,6 +80,10 @@ export function findHeldLead(userId) {
 
 function candidateOrder(now) {
   return (a, b) => {
+    const aHot = a.followupAcceptedAt ? 1 : 0;
+    const bHot = b.followupAcceptedAt ? 1 : 0;
+    if (aHot !== bHot) return bHot - aHot;
+
     if (b.priority !== a.priority) return b.priority - a.priority;
     const aDue = a.status === LEAD_STATUS.SCHEDULED ? 0 : 1;
     const bDue = b.status === LEAD_STATUS.SCHEDULED ? 0 : 1;
@@ -98,6 +103,7 @@ async function eligibleCandidates(userId, now) {
       OR: [
         { status: LEAD_STATUS.ASSIGNED },
         { status: LEAD_STATUS.SCHEDULED, followUpAt: { lte: now } },
+        { followupAcceptedAt: { not: null } }
       ],
     },
     select: LEAD_SELECT,
