@@ -1,35 +1,42 @@
 import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 import { fail, ok, readJson, route } from '@/lib/api';
-import { assignLead } from '@/lib/queue';
-import { notifyUser } from '@/lib/push';
-
-export const dynamic = 'force-dynamic';
+import { LEAD_STATUS } from '@/lib/constants';
+import { normalisePhone } from '@/lib/format';
 
 export const POST = route(async (req) => {
-  const admin = await requireAdmin();
-  const { leadIds, userId, action = 'assign', priority = 1 } = await readJson(req);
-  if (!Array.isArray(leadIds) || !leadIds.length) return fail(400, 'Select at least one lead');
-
-  if (action === 'assign') {
-    for (const leadId of leadIds) {
-      await assignLead({ leadId, toUserId: userId || null, actorId: admin.id, reason: 'Bulk assignment' });
-    }
-    if (userId) {
-      await notifyUser(userId, {
-        type: 'REASSIGNED',
-        title: `${leadIds.length} lead(s) assigned to you`,
-        body: 'Open the app to start calling.',
-        url: '/caller',
-      });
-    }
-    return ok({ updated: leadIds.length });
+  await requireAdmin();
+  const { numbers } = await readJson(req);
+  if (!Array.isArray(numbers) || numbers.length === 0) {
+    return fail(400, 'No numbers provided');
   }
 
-  if (action === 'priority') {
-    await prisma.lead.updateMany({ where: { id: { in: leadIds } }, data: { priority: Number(priority) } });
-    return ok({ updated: leadIds.length });
+  let count = 0;
+  for (const raw of numbers) {
+    const key = normalisePhone(raw);
+    if (!key) continue;
+
+    // Check if it already exists
+    const exists = await prisma.lead.findFirst({ where: { phoneKey: key } });
+    if (exists) continue;
+
+    await prisma.lead.create({
+      data: {
+        name: 'Unknown',
+        phone: raw,
+        phoneKey: key,
+        status: LEAD_STATUS.NEW,
+        source: 'Bulk Add',
+        history: {
+          create: {
+            type: 'IMPORTED',
+            note: 'Added via bulk paste',
+          },
+        },
+      },
+    });
+    count++;
   }
 
-  return fail(400, 'Unknown bulk action');
+  return ok({ count });
 });

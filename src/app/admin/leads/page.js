@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import LeadFilters from '@/components/admin/LeadFilters';
+import BulkLeadAdder from '@/components/admin/BulkLeadAdder';
 import LeadTable from '@/components/admin/LeadTable';
 import { ROLE } from '@/lib/constants';
 import { normalisePhone } from '@/lib/format';
@@ -99,6 +100,8 @@ export default async function LeadsPage({ searchParams }) {
         cities={cities.map((c) => c.city).filter(Boolean)}
         companies={companies}
       />
+
+      <BulkLeadAdder />
 
       <LeadTable telecallers={telecallers} leads={leads} tz={tz} />
 
