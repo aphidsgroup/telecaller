@@ -126,21 +126,26 @@ export default function StatusBar({ user, online, pending, queue, onSync }) {
           <span>
             <span className="text-white text-sm font-black">{queue?.scheduled ?? 0}</span> follow-ups
           </span>
-          {stats ? (
+          {queue ? (
             <>
-              <span className="text-slate-700">·</span>
-              <span className="ml-auto">
-                <span className="text-white font-black">{stats.today}</span>/{stats.target} today
+              <span className="text-slate-700">|</span>
+              <span className="ml-auto flex items-center gap-2">
+                <span className="text-emerald-400">
+                  <span className="font-black">{queue.achievedTarget}</span>/{queue.dailyTarget} Connected
+                </span>
+                <span className="text-slate-500 font-normal">
+                  ({queue.unansweredToday} Unanswered)
+                </span>
               </span>
             </>
           ) : null}
         </div>
         {/* Progress bar */}
-        {stats ? (
+        {queue ? (
           <div className="h-1 w-full rounded-full bg-white/10 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-400 transition-all duration-500"
-              style={{ width: `${pct}%` }}
+              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.round((queue.achievedTarget / queue.dailyTarget) * 100))}%` }}
             />
           </div>
         ) : (

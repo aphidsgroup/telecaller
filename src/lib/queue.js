@@ -124,7 +124,12 @@ function openQueueCount(userId) {
 
 export async function queueSummary(userId) {
   const now = new Date();
-  const [pending, scheduled, dueNow, worked12h, next] = await Promise.all([
+  
+  const todayStart = new Date(now);
+  todayStart.setHours(0,0,0,0);
+
+  const [user, pending, scheduled, dueNow, worked12h, next, achievedTarget, unansweredToday] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { dailyTarget: true } }),
     prisma.lead.count({ where: { assignedToId: userId, status: LEAD_STATUS.ASSIGNED } }),
     prisma.lead.count({ where: { assignedToId: userId, status: LEAD_STATUS.SCHEDULED } }),
     prisma.lead.count({ where: { assignedToId: userId, status: LEAD_STATUS.SCHEDULED, followUpAt: { lte: now } } }),
@@ -136,12 +141,22 @@ export async function queueSummary(userId) {
       orderBy: { followUpAt: 'asc' },
       select: { followUpAt: true },
     }),
+    prisma.disposition.count({
+      where: { userId, submittedAt: { gte: todayStart }, leadStatus: { not: 'NOT_ANSWERED' } }
+    }),
+    prisma.disposition.count({
+      where: { userId, submittedAt: { gte: todayStart }, leadStatus: 'NOT_ANSWERED' }
+    }),
   ]);
+  
   return {
     pending,
     scheduled,
     dueNow,
     worked12h,
+    achievedTarget,
+    unansweredToday,
+    dailyTarget: user?.dailyTarget || 60,
     remaining: pending + dueNow,
     nextAt: next?.followUpAt || null,
   };

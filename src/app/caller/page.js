@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import CallerWorkspace from '@/components/caller/CallerWorkspace';
 import FollowupNotifier from '@/components/shared/FollowupNotifier';
+import MissedTargetModal from '@/components/caller/MissedTargetModal';
 import { getCurrentUser } from '@/lib/auth';
 import { ROLE } from '@/lib/constants';
 
@@ -15,6 +16,7 @@ export default async function CallerPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 pb-6">
+      <MissedTargetModal />
       <FollowupNotifier />
       <CallerWorkspace user={{ id: user.id, name: user.name }} />
     </div>
