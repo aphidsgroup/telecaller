@@ -173,16 +173,26 @@ export default function TelecallerAdmin({ targetRole = 'TELECALLER' }) {
                   <option value="">All Companies</option>
                   {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
-                <button
-                  className="text-slate-500 hover:underline"
-                  disabled={busy}
-                  onClick={() => {
-                    const email = window.prompt(`New email for ${u.name}`, u.email);
-                    if (email && email.trim() !== u.email) patch(u.id, { email: email.trim() }, 'Email updated');
-                  }}
-                >
-                  Change email
-                </button>
+                  <button
+                    className="text-slate-500 hover:underline"
+                    disabled={busy}
+                    onClick={() => {
+                      const name = window.prompt(`New name for ${u.name}`, u.name);
+                      if (name && name.trim() !== u.name) patch(u.id, { name: name.trim() }, 'Name updated');
+                    }}
+                  >
+                    Change name
+                  </button>
+                  <button
+                    className="text-slate-500 hover:underline"
+                    disabled={busy}
+                    onClick={() => {
+                      const email = window.prompt(`New email for ${u.name}`, u.email);
+                      if (email && email.trim() !== u.email) patch(u.id, { email: email.trim() }, 'Email updated');
+                    }}
+                  >
+                    Change email
+                  </button>
                 <button
                   className="text-slate-500 hover:underline"
                   disabled={busy}
