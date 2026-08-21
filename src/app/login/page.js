@@ -12,6 +12,7 @@ export default async function LoginPage({ searchParams }) {
   if (user) {
     if (user.role === ROLE.ADMIN) redirect('/admin');
     if (user.role === ROLE.MANAGER) redirect('/manager');
+    if (user.role === ROLE.SITE_ENGINEER) redirect('/engineer');
     redirect('/caller');
   }
   const params = await searchParams;

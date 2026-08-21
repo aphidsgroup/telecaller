@@ -1,8 +1,9 @@
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { Building2, TrendingUp, Clock, CheckCircle, Users, PlusCircle } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { formatDateTime } from '@/lib/format';
 import { LEAD_STATUS_LABEL, leadStatusCategoryLabel } from '@/lib/constants';
+import ManagerSiteVisitsPipeline from '@/components/manager/ManagerSiteVisitsPipeline';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Manager Dashboard' };
@@ -10,9 +11,11 @@ export const metadata = { title: 'Manager Dashboard' };
 export default async function ManagerDashboard() {
   const user = await getCurrentUser();
 
+  const companyFilter = user.companyId ? { companyId: user.companyId } : undefined;
+
   // Fetch companies this manager can see
   const companies = await prisma.company.findMany({
-    where: user.companyId ? { id: user.companyId } : undefined,
+    where: companyFilter,
     orderBy: { name: 'asc' },
   });
 
@@ -34,11 +37,19 @@ export default async function ManagerDashboard() {
     })
   );
 
-  const recentLeads = await prisma.lead.findMany({
-    where: { 
-      source: 'MANUAL', 
-      ...(user.companyId ? { companyId: user.companyId } : {})
+  const siteVisitLeads = await prisma.lead.findMany({
+    where: {
+      ...companyFilter,
+      lastLeadStatus: { in: ['SITE_VISIT_DONE', 'SEND_SITE_VISIT'] },
+      status: { not: 'CLOSED' }
     },
+    orderBy: { updatedAt: 'desc' },
+    take: 20,
+    select: { id: true, name: true, phone: true, lastLeadStatus: true, assignedToId: true }
+  });
+
+  const recentLeads = await prisma.lead.findMany({
+    where: { source: 'MANUAL', ...companyFilter },
     orderBy: { createdAt: 'desc' },
     take: 10,
     select: {
@@ -99,6 +110,8 @@ export default async function ManagerDashboard() {
           <p className="text-xs text-slate-400">Ask your admin to assign this manager account to a company.</p>
         </div>
       )}
+
+      <ManagerSiteVisitsPipeline initialLeads={siteVisitLeads} />
 
       {recentLeads.length > 0 && (
         <div className="mt-8">

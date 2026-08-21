@@ -98,6 +98,7 @@ export async function requireRole(role) {
 export const requireAdmin = () => requireRole(ROLE.ADMIN);
 export const requireManager = () => requireRole(ROLE.MANAGER);
 export const requireTelecaller = () => requireRole(ROLE.TELECALLER);
+export const requireEngineer = () => requireRole(ROLE.SITE_ENGINEER);
 
 export async function touchPresence(userId, sessionId) {
   const now = new Date();

@@ -116,12 +116,13 @@ export default function TelecallerAdmin() {
             </select>
           </div>
           <div>
-            <label className="label">Role</label>
-            <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-              <option value={ROLE.TELECALLER}>Telecaller</option>
-              <option value={ROLE.MANAGER}>Manager</option>
-            </select>
-          </div>
+              <label className="label">Role</label>
+              <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                <option value={ROLE.TELECALLER}>Telecaller</option>
+                <option value={ROLE.MANAGER}>Manager</option>
+                <option value={ROLE.SITE_ENGINEER}>Site Engineer</option>
+              </select>
+            </div>
           <div>
             <label className="label">Password</label>
             <input
@@ -178,6 +179,7 @@ export default function TelecallerAdmin() {
                   >
                     <option value={ROLE.TELECALLER}>Telecaller</option>
                     <option value={ROLE.MANAGER}>Manager</option>
+                    <option value={ROLE.SITE_ENGINEER}>Site Engineer</option>
                   </select>
                   <select
                     className="bg-transparent text-slate-500 font-semibold focus:outline-none cursor-pointer"

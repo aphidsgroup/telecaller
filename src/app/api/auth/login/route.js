@@ -34,6 +34,9 @@ export const POST = route(async (req) => {
 
   return ok({
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
-    redirect: user.role === ROLE.ADMIN ? '/admin' : (user.role === ROLE.MANAGER ? '/manager' : '/caller'),
+    redirect: user.role === ROLE.ADMIN ? '/admin' : 
+              user.role === ROLE.MANAGER ? '/manager' : 
+              user.role === ROLE.SITE_ENGINEER ? '/engineer' : 
+              '/caller',
   });
 });

@@ -1,7 +1,7 @@
 // Shared vocabulary for the whole app. Kept as plain strings so the same
 // values work in the DB (SQLite/Postgres), the API and the UI.
 
-export const ROLE = { ADMIN: 'ADMIN', MANAGER: 'MANAGER', TELECALLER: 'TELECALLER' };
+export const ROLE = { ADMIN: 'ADMIN', MANAGER: 'MANAGER', TELECALLER: 'TELECALLER', SITE_ENGINEER: 'SITE_ENGINEER' };
 
 export const LEAD_STATUS = {
   UNASSIGNED: 'UNASSIGNED',   // sitting in the central pool
@@ -34,6 +34,7 @@ export const CALL_CATEGORY = [
   { value: 'MONDAY', label: 'Call Me Monday' },
   { value: 'NEXT_WEEK', label: 'Call Me Next Week' },
   { value: 'NEXT_MONTH', label: 'Call Me Next Month' },
+  { value: 'SITE_VISIT_OUTCOME', label: 'Site Visit Outcome' },
 ];
 
 // Categories that imply the prospect asked to be called back later.
@@ -87,6 +88,7 @@ export const EVENT = {
   DUPLICATE_FLAGGED: 'DUPLICATE_FLAGGED',
   PRIORITY_CHANGED: 'PRIORITY_CHANGED',
   DND_MARKED: 'DND_MARKED',
+  SITE_VISIT_UPDATED: 'SITE_VISIT_UPDATED',
 };
 
 export const EVENT_LABEL = {
@@ -108,6 +110,7 @@ export const EVENT_LABEL = {
   DUPLICATE_FLAGGED: 'Duplicate flagged on import',
   PRIORITY_CHANGED: 'Priority changed',
   DND_MARKED: 'Marked DND',
+  SITE_VISIT_UPDATED: 'Site visit status updated',
 };
 
 export const IMPORT_SOURCE = {
