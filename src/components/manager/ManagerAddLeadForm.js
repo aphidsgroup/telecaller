@@ -68,7 +68,47 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
   }
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-6">
+      
+      {/* Dedicated Search Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Check Existing Lead
+        </h2>
+        <div className="relative">
+          <input 
+            type="tel" 
+            placeholder="Search phone number to check if lead exists..." 
+            className="w-full text-sm py-3 pl-4 pr-10 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold"
+            value={form.phone}
+            onChange={e => setForm({...form, phone: e.target.value})}
+          />
+        </div>
+        {duplicates.length > 0 && (
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <p className="text-[11px] font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5 mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Lead Already Exists in Database
+            </p>
+            <div className="space-y-2">
+              {duplicates.map(dup => (
+                <div key={dup.id} className="text-xs text-amber-900 bg-amber-100/50 p-2 rounded-lg flex flex-col gap-1">
+                  <div className="flex justify-between font-bold">
+                    <span>{dup.name || 'Unknown'}</span>
+                    <span>{dup.phone}</span>
+                  </div>
+                  <div className="flex justify-between text-amber-700">
+                    <span>Status: {LEAD_STATUS_CATEGORY[dup.lastLeadStatus] || dup.status}</span>
+                    <span>Assigned: {dup.assignedTo?.name || 'Unassigned'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
         <h2 className="text-lg font-black text-slate-800 mb-6">Add Manual Lead</h2>
         
@@ -89,6 +129,12 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
           )}
           
           <div>
+            <label className="label">Phone Number *</label>
+            <input type="tel" className="input bg-slate-50" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} required placeholder="e.g. 9876543210" />
+            <p className="text-[10px] text-slate-400 mt-1 font-medium">Auto-syncs with the search bar above.</p>
+          </div>
+
+          <div>
             <label className="label">Type of Lead</label>
             <select className="input" value={form.typeOfLead} onChange={e => setForm({...form, typeOfLead: e.target.value})}>
               <option value="">-- Select --</option>
@@ -99,25 +145,7 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
           </div>
           
           <div>
-            <label className="label">Phone Number *</label>
-            <input type="tel" className="input" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} required placeholder="e.g. 9876543210" />
-            {duplicates.length > 0 && (
-              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
-                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wide">⚠ Lead Already Exists</p>
-                <div className="mt-1 space-y-1">
-                  {duplicates.map(dup => (
-                    <div key={dup.id} className="text-xs text-amber-700 flex justify-between">
-                      <span>{dup.name || 'Unknown'} ({dup.phone})</span>
-                      <span className="font-semibold">{dup.lastLeadStatus || dup.status}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="label">Client Name</label>
+            <label className="label">Name</label>
             <input type="text" className="input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Optional" />
           </div>
           

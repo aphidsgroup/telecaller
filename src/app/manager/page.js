@@ -49,7 +49,7 @@ export default async function ManagerDashboard() {
       }
     }),
     prisma.lead.findMany({
-      where: { source: 'MANUAL', ...companyFilter },
+      where: { source: 'MANUAL', status: 'NEW', lastContactedAt: null, ...companyFilter },
       orderBy: { createdAt: 'desc' },
       take: 10,
       select: {
@@ -133,30 +133,28 @@ export default async function ManagerDashboard() {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between mb-6 mt-2">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center">
-            <Building2 className="h-6 w-6 text-brand-600" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black text-slate-900">Manager Overview</h1>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Lead Insights</p>
-          </div>
+      <div className="flex items-center gap-3 mb-4 mt-2">
+        <div className="w-12 h-12 rounded-full bg-brand-100 flex items-center justify-center">
+          <Building2 className="h-6 w-6 text-brand-600" />
         </div>
-        
-        {/* Search Bar */}
-        <form action="/manager/leads" method="GET" className="relative">
-          <input 
-            type="text" 
-            name="q" 
-            placeholder="Search by phone..." 
-            className="input w-48 text-sm py-1.5 pl-3 pr-8 rounded-full bg-white shadow-sm border-slate-200"
-          />
-          <button type="submit" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-500">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          </button>
-        </form>
+        <div>
+          <h1 className="text-xl font-black text-slate-900">Manager Overview</h1>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Lead Insights</p>
+        </div>
       </div>
+        
+      {/* Search Bar */}
+      <form action="/manager/leads" method="GET" className="relative mb-6">
+        <input 
+          type="text" 
+          name="q" 
+          placeholder="Search leads by phone number or name..." 
+          className="w-full text-sm py-3 pl-4 pr-10 rounded-xl bg-white shadow-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+        />
+        <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-500">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+      </form>
 
       {stats.map(s => (
         <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
