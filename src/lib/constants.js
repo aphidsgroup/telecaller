@@ -55,6 +55,7 @@ export const LEAD_STATUS_CATEGORY = [
   { value: 'SITE_VISIT_DONE', label: 'Site Visit Completed' },
   { value: 'QUOTATION_SENT', label: 'Quotation Sent' },
   { value: 'NEGOTIATING', label: 'Negotiating' },
+  { value: 'COMING_TO_OFFICE', label: 'Client coming to our office' },
   { value: 'INTERESTED', label: 'Interested / Follow Up' },
   { value: 'NOT_INTERESTED', label: 'Not Interested' },
   { value: 'CONVERTED', label: 'Converted / Booked' },
