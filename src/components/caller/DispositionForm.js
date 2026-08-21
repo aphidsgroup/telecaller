@@ -136,7 +136,7 @@ export default function DispositionForm({
         {/* ── Client Details ───────────────────────────────────── */}
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
           <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Client Details (optional)</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
             <div>
               <label className="label">Client Name</label>
               <input
@@ -168,14 +168,23 @@ export default function DispositionForm({
               />
             </div>
             <div>
+              <label className="label">Floor</label>
+              <select className="input" value={form.floor || ''} onChange={(e) => set({ floor: e.target.value })}>
+                <option value="">-- Select --</option>
+                <option value="Ground Floor">Ground Floor</option>
+                <option value="G+1">G+1</option>
+                <option value="G+2">G+2</option>
+                <option value="G+3">G+3</option>
+              </select>
+            </div>
+            <div>
               <label className="label">Type of Lead</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="e.g. Residential"
-                value={form.typeOfLead}
-                onChange={(e) => set({ typeOfLead: e.target.value })}
-              />
+              <select className="input" value={form.typeOfLead || ''} onChange={(e) => set({ typeOfLead: e.target.value })}>
+                <option value="">-- Select --</option>
+                <option value="Residential">Residential</option>
+                <option value="Commercial">Commercial</option>
+                <option value="Renovation">Renovation</option>
+              </select>
             </div>
             <div>
               <label className="label">Cash or Loan</label>

@@ -70,14 +70,10 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
           <div>
             <label className="label">Type of Lead</label>
             <select className="input" value={form.typeOfLead} onChange={e => setForm({...form, typeOfLead: e.target.value})}>
-              <optgroup label="Construction">
-                <option value="Construction: Labour Contract">Labour Contract</option>
-                <option value="Construction: Material Contract">Material Contract</option>
-              </optgroup>
-              <optgroup label="Interior">
-                <option value="Interior: Labour Contract">Labour Contract</option>
-                <option value="Interior: Material Contract">Material Contract</option>
-              </optgroup>
+              <option value="">-- Select --</option>
+              <option value="Residential">Residential</option>
+              <option value="Commercial">Commercial</option>
+              <option value="Renovation">Renovation</option>
             </select>
           </div>
           
@@ -99,6 +95,17 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
           <div>
             <label className="label">Total Built-up Area</label>
             <input type="text" className="input" value={form.builtUpArea} onChange={e => setForm({...form, builtUpArea: e.target.value})} placeholder="e.g. 1200 sqft" />
+          </div>
+          
+          <div>
+            <label className="label">Floor</label>
+            <select className="input" value={form.floor || ''} onChange={e => setForm({...form, floor: e.target.value})}>
+              <option value="">-- Select --</option>
+              <option value="Ground Floor">Ground Floor</option>
+              <option value="G+1">G+1</option>
+              <option value="G+2">G+2</option>
+              <option value="G+3">G+3</option>
+            </select>
           </div>
           
           <div>

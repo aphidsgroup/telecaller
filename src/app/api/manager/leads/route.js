@@ -51,7 +51,8 @@ export const POST = route(async (req) => {
     'Location Area': locationArea,
     'Built-up Area': builtUpArea,
     'Funding': funding,
-    'Starting': starting
+    'Starting': starting,
+    'Floor': body.floor
   };
 
   const lead = await prisma.lead.create({
