@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Wifi, WifiOff, RefreshCw, LogOut } from 'lucide-react';
+import { Wifi, WifiOff, RefreshCw, LogOut, Clock } from 'lucide-react';
+
+const SESSION_MINUTES = 60; // auto-logout after this many minutes
 
 export default function StatusBar({ user, online, pending, queue, onSync }) {
   const router = useRouter();
   const [stats, setStats] = useState(null);
+  const [secondsLeft, setSecondsLeft] = useState(SESSION_MINUTES * 60);
+  const [loggedOut, setLoggedOut] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -20,6 +24,30 @@ export default function StatusBar({ user, online, pending, queue, onSync }) {
     return () => { alive = false; clearInterval(t); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 60-minute auto-logout countdown
+  const autoLogout = useCallback(async () => {
+    if (loggedOut) return;
+    setLoggedOut(true);
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.replace('/login?reason=session_expired');
+    router.refresh();
+  }, [loggedOut, router]);
+
+  useEffect(() => {
+    const startTime = Date.now();
+    const totalMs = SESSION_MINUTES * 60 * 1000;
+    const tick = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const remaining = Math.max(0, Math.ceil((totalMs - elapsed) / 1000));
+      setSecondsLeft(remaining);
+      if (remaining === 0) {
+        clearInterval(tick);
+        autoLogout();
+      }
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [autoLogout]);
+
   async function signOut() {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/login');
@@ -27,6 +55,9 @@ export default function StatusBar({ user, online, pending, queue, onSync }) {
   }
 
   const pct = stats ? Math.min(100, Math.round((stats.today / stats.target) * 100)) : 0;
+  const minsLeft = Math.floor(secondsLeft / 60);
+  const secsLeft = secondsLeft % 60;
+  const isWarning = secondsLeft <= 300; // last 5 minutes
 
   return (
     <header className="sticky top-0 z-20 bg-slate-950 text-white shadow-lg">
@@ -45,8 +76,18 @@ export default function StatusBar({ user, online, pending, queue, onSync }) {
           </div>
         </div>
 
-        {/* Right: online status + signout */}
+        {/* Right: session timer + online status + signout */}
         <div className="flex items-center gap-2">
+          {/* Session countdown */}
+          <span className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+            isWarning
+              ? 'bg-amber-500/30 text-amber-300 animate-pulse'
+              : 'bg-white/10 text-slate-300'
+          }`} title="Auto-logout countdown">
+            <Clock className="h-2.5 w-2.5" />
+            {String(minsLeft).padStart(2, '0')}:{String(secsLeft).padStart(2, '0')}
+          </span>
+
           {pending > 0 ? (
             <button
               onClick={onSync}
@@ -65,6 +106,15 @@ export default function StatusBar({ user, online, pending, queue, onSync }) {
           </button>
         </div>
       </div>
+
+      {/* 5-minute warning banner */}
+      {isWarning && secondsLeft > 0 && (
+        <div className="bg-amber-500/20 border-t border-amber-500/30 px-4 py-1.5 text-center">
+          <p className="text-[11px] font-bold text-amber-300">
+            ⚠ Session expires in {minsLeft}:{String(secsLeft).padStart(2, '0')} — you will be auto-logged out. Your current lead will be saved.
+          </p>
+        </div>
+      )}
 
       {/* Stats + progress strip */}
       <div className="border-t border-white/10 px-4 pb-3 pt-2">

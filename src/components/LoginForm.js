@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Eye, EyeOff } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Eye, EyeOff, RefreshCw } from 'lucide-react';
 
 export default function LoginForm({ next = '' }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionExpired = searchParams.get('reason') === 'session_expired';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -38,6 +40,15 @@ export default function LoginForm({ next = '' }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      {sessionExpired && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-3">
+          <RefreshCw className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-bold text-amber-800">Session expired</p>
+            <p className="text-xs text-amber-700 mt-0.5">Your 1-hour session ended. Your current lead has been saved — please log back in to continue.</p>
+          </div>
+        </div>
+      )}
       <div>
         <label className="label" htmlFor="email">
           Email address
