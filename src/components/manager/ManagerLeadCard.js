@@ -1,4 +1,6 @@
-﻿import { useState } from 'react';
+'use client';
+
+import { useState } from 'react';
 import { Phone, ChevronDown, MessageSquare, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { LEAD_STATUS_CATEGORY, leadStatusCategoryLabel, LEAD_STATUS_LABEL } from '@/lib/constants';
 import { formatDateTime } from '@/lib/format';
@@ -69,13 +71,14 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
     setUpdating(true);
     setSelectedStatus(statusValue);
     try {
-      const res = await fetch(\/api/manager/leads/\\, {
+      const res = await fetch(`/api/manager/leads/${lead.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadStatus: statusValue })
+        body: JSON.stringify({ lastLeadStatus: statusValue })
       });
       if (res.ok) {
-        setLead({ ...lead, lastLeadStatus: statusValue });
+        const data = await res.json();
+        setLead({ ...lead, lastLeadStatus: data.lastLeadStatus, status: data.status });
       } else {
         throw new Error('Failed to update status');
       }
@@ -90,7 +93,11 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col gap-4">
       {/* Follow-up Status Badge */}
       {lead.followupRequestedAt && (
-        <div className={\px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between \\}>
+        <div className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
+          lead.followupAcceptedAt ? 'bg-emerald-50 text-emerald-700' :
+          lead.followupDeclinedAt ? 'bg-rose-50 text-rose-700' :
+          'bg-amber-50 text-amber-700'
+        }`}>
           <div className="flex items-center gap-1.5">
             {lead.followupAcceptedAt ? <CheckCircle size={14} /> :
              lead.followupDeclinedAt ? <XCircle size={14} /> :
@@ -107,17 +114,21 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
 
       <div className="flex justify-between items-start">
         <div>
-          <h3 className="font-bold text-slate-800 text-lg">{lead.name || 'Unknown'}</h3>
-          <div className="flex items-center gap-1.5 text-slate-500 mt-1 text-sm font-medium">
+          <div className="font-bold text-slate-800">{lead.name || 'Unknown'}</div>
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-500 mt-0.5">
             <Phone className="w-3.5 h-3.5" />
-            <a href={\	el:\\} className="text-brand-600">{lead.phone}</a>
+            <a href={`tel:${lead.phone}`} className="text-brand-600">{lead.phone}</a>
           </div>
           {lead.createdAt && (
             <div className="text-[10px] text-slate-400 mt-1">Added: {formatDateTime(lead.createdAt)}</div>
           )}
         </div>
         <div className="text-right">
-          <span className={\inline-block px-2 py-1 rounded-md text-[10px] font-bold uppercase \\}>
+          <span className={`inline-block px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
+            lead.lastLeadStatus === 'CONVERTED' ? 'bg-emerald-100 text-emerald-700' :
+            lead.lastLeadStatus ? 'bg-brand-50 text-brand-600' :
+            'bg-slate-100 text-slate-500'
+          }`}>
             {lead.lastLeadStatus ? leadStatusCategoryLabel(lead.lastLeadStatus) : LEAD_STATUS_LABEL[lead.status] || 'Unassigned'}
           </span>
           {showCompany && lead.company && (
@@ -136,14 +147,11 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
                 <div className="w-2.5 h-2.5 rounded-full bg-brand-400 mt-1 shrink-0 relative z-10 border-2 border-white shadow-sm" />
                 <div className="flex-1">
                   <div className="text-[11px] font-bold text-slate-700 flex justify-between items-start">
-                    <div>
-                      <span className="text-brand-600">{disp.user?.name || 'Unknown'}</span> <span className="text-slate-400 font-medium">({disp.user?.role === 'TELECALLER' ? 'Telecaller' : 'Site Engineer'})</span>
-                    </div>
-                    <span className="text-slate-400">{formatDateTime(disp.submittedAt)}</span>
+                    <span>{leadStatusCategoryLabel(disp.leadStatus)}</span>
+                    <span className="text-[9px] font-semibold text-slate-400 text-right">{formatDateTime(disp.submittedAt)}</span>
                   </div>
-                  <div className="text-xs font-bold text-slate-800 mt-0.5">
-                    {leadStatusCategoryLabel(disp.leadStatus)}
-                  </div>
+                  <div className="text-[10px] font-semibold text-brand-600 mt-0.5">by {disp.user?.name} {disp.user?.role === 'SITE_ENGINEER' ? '(Engineer)' : '(Telecaller)'}</div>
+                  
                   {disp.notes && (
                     <div className="text-[11px] text-slate-600 mt-1.5 italic border-l-2 border-brand-200 pl-2">
                       &quot;{disp.notes}&quot;
