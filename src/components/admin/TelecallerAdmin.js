@@ -82,7 +82,7 @@ export default function TelecallerAdmin({ targetRole = 'TELECALLER' }) {
         <div className="flex items-center gap-3">
           {message ? <span className="text-xs font-medium text-brand-700">{message}</span> : null}
           <button className="btn-primary" onClick={() => setOpen((v) => !v)}>
-            {open ? 'Close' : 'Add telecaller'}
+            {open ? 'Close' : `Add ${targetRole === ROLE.MANAGER ? 'manager' : targetRole === ROLE.SITE_ENGINEER ? 'site engineer' : 'telecaller'}`}
           </button>
         </div>
       </div>
@@ -110,20 +110,12 @@ export default function TelecallerAdmin({ targetRole = 'TELECALLER' }) {
           <div>
             <label className="label">Company</label>
             <select className="input" value={form.companyId || ''} onChange={(e) => setForm({ ...form, companyId: e.target.value || null })}>
-              <option value="">(None)</option>
+              <option value="">All Companies</option>
               {companies.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
-          <div>
-              <label className="label">Role</label>
-              <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-                <option value={ROLE.TELECALLER}>Telecaller</option>
-                <option value={ROLE.MANAGER}>Manager</option>
-                <option value={ROLE.SITE_ENGINEER}>Site Engineer</option>
-              </select>
-            </div>
           <div>
             <label className="label">Password</label>
             <input
@@ -160,7 +152,7 @@ export default function TelecallerAdmin({ targetRole = 'TELECALLER' }) {
                 {u.company ? (
                   <span className="chip bg-brand-50 text-brand-600 text-[10px]">{u.company.name}</span>
                 ) : (
-                  <span className="chip bg-slate-100 text-slate-500 text-[10px]">No company</span>
+                  <span className="chip bg-slate-100 text-slate-500 text-[10px]">All Companies</span>
                 )}
               </div>
               
@@ -174,21 +166,11 @@ export default function TelecallerAdmin({ targetRole = 'TELECALLER' }) {
                 </button>
                   <select
                     className="bg-transparent text-slate-500 font-semibold focus:outline-none cursor-pointer"
-                    value={u.role || ROLE.TELECALLER}
-                    onChange={(e) => patch(u.id, { role: e.target.value }, `Changed role for ${u.name}`)}
-                    disabled={busy}
-                  >
-                    <option value={ROLE.TELECALLER}>Telecaller</option>
-                    <option value={ROLE.MANAGER}>Manager</option>
-                    <option value={ROLE.SITE_ENGINEER}>Site Engineer</option>
-                  </select>
-                  <select
-                    className="bg-transparent text-slate-500 font-semibold focus:outline-none cursor-pointer"
                     value={u.companyId || ''}
                   onChange={(e) => patch(u.id, { companyId: e.target.value || null }, `Assigned ${u.name} to company`)}
                   disabled={busy}
                 >
-                  <option value="">Set company...</option>
+                  <option value="">All Companies</option>
                   {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
                 <button
