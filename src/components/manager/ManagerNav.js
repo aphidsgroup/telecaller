@@ -28,8 +28,7 @@ export default function ManagerNav() {
       })}
       
       <button onClick={() => {
-        document.cookie = 'bt_session=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT';
-        window.location.href = '/login';
+        fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/login');
       }} className="flex flex-col items-center p-2 rounded-xl text-slate-400 hover:text-slate-600 transition-colors">
         <LogOut className="h-6 w-6 mb-1" />
         <span className="text-[10px] font-bold tracking-wide uppercase">Log Out</span>
