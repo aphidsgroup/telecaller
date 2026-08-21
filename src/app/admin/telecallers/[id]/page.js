@@ -49,7 +49,7 @@ export default async function TelecallerDetail({ params }) {
     prisma.disposition.findMany({
       where: { userId: id },
       orderBy: { submittedAt: 'desc' },
-      take: 25,
+      take: 100,
       include: { lead: { select: { id: true, name: true, project: true } } },
     }),
   ]);
@@ -88,7 +88,7 @@ export default async function TelecallerDetail({ params }) {
 
       <div className="grid gap-5 lg:grid-cols-3">
         <section className="lg:col-span-2">
-          <SectionTitle>Recent status updates</SectionTitle>
+          <SectionTitle>Detailed Call Timeline (Last 100)</SectionTitle>
           <div className="card overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
@@ -96,28 +96,52 @@ export default async function TelecallerDetail({ params }) {
                   <th className="th">Lead</th>
                   <th className="th">Call category</th>
                   <th className="th">Lead status</th>
-                  <th className="th">Logged</th>
-                  <th className="th">Took</th>
+                  <th className="th">Gap (Idle)</th>
+                  <th className="th">Call Clicked At</th>
+                  <th className="th">Time Spent</th>
+                  <th className="th">Logged At</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {recent.map((d) => (
-                  <tr key={d.id}>
-                    <td className="td">
-                      <Link href={`/admin/leads/${d.lead.id}`} className="font-medium text-brand-700 hover:underline">
-                        {d.lead.name}
-                      </Link>
-                      <div className="text-xs text-slate-500">{d.lead.project || '-'}</div>
-                    </td>
-                    <td className="td text-xs">{callCategoryLabel(d.callCategory)}</td>
-                    <td className="td text-xs">{leadStatusCategoryLabel(d.leadStatus)}</td>
-                    <td className="td text-xs text-slate-500">{formatDateTime(d.submittedAt, tz)}</td>
-                    <td className="td text-xs">{d.responseSeconds != null ? formatDuration(d.responseSeconds) : '-'}</td>
-                  </tr>
-                ))}
+                {recent.map((d, i) => {
+                  const prev = recent[i + 1];
+                  const clickedAt = d.responseSeconds != null 
+                    ? new Date(d.submittedAt.getTime() - d.responseSeconds * 1000) 
+                    : null;
+                    
+                  let gapSeconds = null;
+                  if (prev && clickedAt) {
+                    gapSeconds = Math.max(0, (clickedAt.getTime() - prev.submittedAt.getTime()) / 1000);
+                  }
+
+                  return (
+                    <tr key={d.id}>
+                      <td className="td">
+                        <Link href={`/admin/leads/${d.lead.id}`} className="font-medium text-brand-700 hover:underline">
+                          {d.lead.name}
+                        </Link>
+                        <div className="text-xs text-slate-500">{d.lead.project || '-'}</div>
+                      </td>
+                      <td className="td text-xs">{callCategoryLabel(d.callCategory)}</td>
+                      <td className="td text-xs">{leadStatusCategoryLabel(d.leadStatus)}</td>
+                      <td className="td text-xs font-semibold text-slate-400">
+                        {gapSeconds != null ? (
+                          gapSeconds > 300 ? <span className="text-rose-500">{formatDuration(gapSeconds)}</span> : formatDuration(gapSeconds)
+                        ) : '-'}
+                      </td>
+                      <td className="td text-xs text-slate-500">
+                        {clickedAt ? formatDateTime(clickedAt, tz) : '-'}
+                      </td>
+                      <td className="td text-xs font-semibold text-slate-700">
+                        {d.responseSeconds != null ? formatDuration(d.responseSeconds) : '-'}
+                      </td>
+                      <td className="td text-xs text-slate-500">{formatDateTime(d.submittedAt, tz)}</td>
+                    </tr>
+                  );
+                })}
                 {recent.length === 0 ? (
                   <tr>
-                    <td className="td text-slate-500" colSpan={5}>
+                    <td className="td text-slate-500" colSpan={7}>
                       Nothing logged yet.
                     </td>
                   </tr>
