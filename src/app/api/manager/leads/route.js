@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { requireManager } from '@/lib/auth';
 import { fail, ok, readJson, route } from '@/lib/api';
 import { isValidPhone, normalisePhone } from '@/lib/format';
-import { EVENT, IMPORT_SOURCE } from '@/lib/constants';
+import { EVENT, IMPORT_SOURCE, TERMINAL_LEAD_STATUSES } from '@/lib/constants';
 import { logEvent } from '@/lib/events';
 import { distributePool } from '@/lib/queue';
 
@@ -13,7 +13,7 @@ export const POST = route(async (req) => {
   const user = await requireManager();
   const body = await readJson(req);
 
-  const { companyId, phone, name, typeOfLead, locationArea, builtUpArea, funding, starting } = body;
+  const { companyId, phone, name, typeOfLead, locationArea, builtUpArea, funding, starting, status } = body;
 
   if (!phone || !isValidPhone(phone)) {
     return fail(400, 'Invalid or missing phone number');
@@ -31,6 +31,20 @@ export const POST = route(async (req) => {
     return fail(409, 'This phone number already exists in the system as a lead.');
   }
 
+  let finalStatus = 'UNASSIGNED';
+  let lastLeadStatus = null;
+  
+  if (status && status !== 'UNASSIGNED') {
+    lastLeadStatus = status;
+    if (TERMINAL_LEAD_STATUSES.includes(status)) {
+      finalStatus = 'CLOSED';
+    } else {
+      // If it's a follow-up or something else, we could leave it UNASSIGNED for someone else to call,
+      // or we can mark it as UNASSIGNED so it gets distributed, but with the lastLeadStatus intact.
+      finalStatus = 'UNASSIGNED';
+    }
+  }
+
   // Create the lead
   const extraData = {
     'Type of Lead': typeOfLead,
@@ -40,8 +54,6 @@ export const POST = route(async (req) => {
     'Starting': starting
   };
 
-  // We should create a manual import log to attach this to, or just insert it directly
-  // A manual import log per day per manager could be nice, but null is fine for individual manual leads
   const lead = await prisma.lead.create({
     data: {
       name: name || 'Unknown',
@@ -51,7 +63,9 @@ export const POST = route(async (req) => {
       extraData,
       source: IMPORT_SOURCE.MANUAL,
       companyId: companyId || null,
-      score: 50 // base score
+      score: 50,
+      status: finalStatus,
+      lastLeadStatus
     }
   });
 

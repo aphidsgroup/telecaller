@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { LEAD_STATUS_CATEGORY } from '@/lib/constants';
 
 export default function ManagerAddLeadForm({ companies, userCompanyId }) {
   const router = useRouter();
@@ -17,7 +18,8 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
     locationArea: '',
     builtUpArea: '',
     funding: 'Cash',
-    starting: 'Immediately'
+    starting: 'Immediately',
+    status: 'UNASSIGNED'
   });
 
   async function submit(e) {
@@ -115,6 +117,18 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
               <option value="Within 1 month">Within 1 month</option>
               <option value="Within 3 months">Within 3 months</option>
               <option value="More than 3 months">More than 3 months</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="label">Lead Status</label>
+            <select className="input" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+              <option value="UNASSIGNED">Unassigned / Fresh Lead</option>
+              <optgroup label="Mark as closed / disposition">
+                {LEAD_STATUS_CATEGORY.map(s => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </optgroup>
             </select>
           </div>
           
