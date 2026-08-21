@@ -151,7 +151,7 @@ export default function EngineerLeadCard({ lead, onUpdate }) {
           <h4 className="text-[10px] font-bold text-brand-600 uppercase tracking-wide mb-2">Telecaller Notes</h4>
           {lead.dispositions[0].notes && (
             <div className="text-xs text-slate-700 italic">
-              "{lead.dispositions[0].notes}"
+              &quot;{lead.dispositions[0].notes}&quot;
             </div>
           )}
           {lead.dispositions[0].audioBase64 && (

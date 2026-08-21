@@ -95,7 +95,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
                   
                   {disp.notes && (
                     <div className="text-[11px] text-slate-600 mt-1.5 italic border-l-2 border-brand-200 pl-2">
-                      "{disp.notes}"
+                      &quot;{disp.notes}&quot;
                     </div>
                   )}
                   {disp.audioBase64 && (

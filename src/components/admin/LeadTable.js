@@ -154,7 +154,7 @@ export default function LeadTable({ leads, telecallers, tz }) {
                                 </div>
                                 {disp.notes && (
                                   <div className="text-[9px] text-slate-600 mt-1 italic border-l-2 border-brand-200 pl-1.5 line-clamp-2" title={disp.notes}>
-                                    "{disp.notes}"
+                                    &quot;{disp.notes}&quot;
                                   </div>
                                 )}
                                 {disp.audioBase64 && (
