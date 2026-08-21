@@ -67,7 +67,8 @@ export async function recordWhatsAppClick({ userId, leadId }) {
 }
 
 function validateDisposition({ callCategory, leadStatus }) {
-  if (!CALL_CATEGORY_VALUES.includes(callCategory)) throw new HttpError(400, 'Pick a valid call category');
+  if (callCategory && !CALL_CATEGORY_VALUES.includes(callCategory)) throw new HttpError(400, 'Pick a valid call category');
+  if (!leadStatus) throw new HttpError(400, 'Pick a valid lead status');
   if (!LEAD_STATUS_VALUES.includes(leadStatus)) throw new HttpError(400, 'Pick a valid lead status');
 }
 
@@ -87,6 +88,7 @@ export async function submitDisposition({
   callClickedAt = null,
   queuedOffline = false,
   clientDetails = null,
+  skipCallCheck = false,
 }) {
   if (!clientEventId) throw new HttpError(400, 'Missing clientEventId (idempotency key)');
   validateDisposition({ callCategory, leadStatus });
@@ -113,7 +115,7 @@ export async function submitDisposition({
   // The status form only unlocks after the call button is pressed. If the click
   // happened while offline the client replays its own timestamp here.
   let clickAt = lead.callClickedAt;
-  if (lead.status !== LEAD_STATUS.IN_PROGRESS) {
+  if (!skipCallCheck && lead.status !== LEAD_STATUS.IN_PROGRESS) {
     if (!callClickedAt) {
       throw new HttpError(409, 'Press the Call button before submitting a status update');
     }

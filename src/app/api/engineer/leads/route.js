@@ -41,6 +41,7 @@ export const POST = route(async (req) => {
     notes: notes || 'Updated by Site Engineer',
     audioBase64: audioBase64 || null,
     queuedOffline: false,
+    skipCallCheck: true,
   });
 
   return ok({ result });
