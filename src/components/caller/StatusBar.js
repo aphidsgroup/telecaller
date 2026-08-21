@@ -18,7 +18,7 @@ export default function StatusBar({ user, online, pending, queue, onSync }) {
     load();
     const t = setInterval(load, 120000);
     return () => { alive = false; clearInterval(t); };
-  }, [queue?.remaining, queue?.scheduled]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function signOut() {
     await fetch('/api/auth/logout', { method: 'POST' });

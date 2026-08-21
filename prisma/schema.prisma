@@ -4,7 +4,7 @@
 // To move to Postgres: set provider = "postgresql" + DATABASE_URL, then `prisma db push`.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
 }
 
 datasource db {
@@ -137,6 +137,9 @@ model Lead {
   @@index([assignedToId, status, followUpAt])
   @@index([phoneKey])
   @@index([status])
+  @@index([companyId, status])
+  @@index([lastLeadStatus])
+  @@index([flaggedForReview])
   @@index([createdAt])
 }
 

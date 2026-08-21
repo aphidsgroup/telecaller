@@ -37,7 +37,7 @@ const DEFAULTS = Object.fromEntries(SETTING_DEFS.map((d) => [d.key, d.def]));
 
 let cache = null;
 let cacheAt = 0;
-const TTL_MS = 15_000;
+const TTL_MS = 300_000; // 5 minutes — admin writes call invalidateSettingsCache() so this is always fresh
 
 export async function getSettings({ fresh = false } = {}) {
   if (!fresh && cache && Date.now() - cacheAt < TTL_MS) return cache;

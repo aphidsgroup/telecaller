@@ -9,14 +9,16 @@ export const GET = route(async (req) => {
   await requireAdmin();
   const roleParam = req.nextUrl.searchParams.get('role');
   
-  const users = await prisma.user.findMany({
-    where: { 
-      role: roleParam ? roleParam : { in: [ROLE.TELECALLER, ROLE.MANAGER, ROLE.SITE_ENGINEER] } 
-    },
-    select: { id: true, name: true, email: true, role: true, isActive: true, dailyTarget: true, lastSeenAt: true, companyId: true, company: { select: { name: true } } },
-    orderBy: { name: 'asc' },
-  });
-  const companies = await prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } });
+  const [users, companies] = await Promise.all([
+    prisma.user.findMany({
+      where: { 
+        role: roleParam ? roleParam : { in: [ROLE.TELECALLER, ROLE.MANAGER, ROLE.SITE_ENGINEER] } 
+      },
+      select: { id: true, name: true, email: true, role: true, isActive: true, dailyTarget: true, lastSeenAt: true, companyId: true, company: { select: { name: true } } },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+  ]);
   return ok({ users, companies });
 });
 

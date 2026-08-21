@@ -46,9 +46,8 @@ export async function serialiseLeadForCaller(lead) {
     }
   }
 
-  const isPostSiteVisit = await prisma.disposition.count({ 
-    where: { leadId: lead.id, leadStatus: { in: ['SEND_SITE_VISIT', 'SITE_VISIT_DONE', 'QUOTATION_SENT', 'NEGOTIATING'] } } 
-  }) > 0;
+  const POST_SITE_STATUSES = new Set(['SEND_SITE_VISIT', 'SITE_VISIT_DONE', 'QUOTATION_SENT', 'NEGOTIATING']);
+  const isPostSiteVisit = history.some(h => POST_SITE_STATUSES.has(h.leadStatus));
 
   return {
     ...lead,
@@ -175,7 +174,8 @@ export async function distributePool({ actorId = null, limit = 500, modeOverride
 
   const maxQueue = num(settings, 'assignment.maxQueuePerCaller');
   const loads = new Map();
-  for (const c of callers) loads.set(c.id, await openQueueCount(c.id));
+  const counts = await Promise.all(callers.map(c => openQueueCount(c.id)));
+  callers.forEach((c, i) => loads.set(c.id, counts[i]));
 
   const rules =
     mode === ASSIGNMENT_MODE.RULES

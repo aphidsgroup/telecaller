@@ -29,9 +29,11 @@ export default async function TelecallersPage() {
     },
   });
 
+  const userIds = users.map(u => u.id);
+
   const sessions = await prisma.loginSession.findMany({
     where: {
-      userId: { in: users.map(u => u.id) },
+      userId: { in: userIds },
       loginAt: { gte: currentMonthStart }
     },
     select: { userId: true, loginAt: true, lastSeenAt: true }
