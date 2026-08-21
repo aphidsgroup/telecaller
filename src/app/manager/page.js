@@ -1,29 +1,24 @@
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { Building2 } from 'lucide-react';
-import { formatDateTime } from '@/lib/format';
-import { LEAD_STATUS_LABEL, leadStatusCategoryLabel } from '@/lib/constants';
 import ManagerSiteVisitsPipeline from '@/components/manager/ManagerSiteVisitsPipeline';
+import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Manager Dashboard' };
 
 export default async function ManagerDashboard() {
   const user = await getCurrentUser();
-
   const companyFilter = user.companyId ? { companyId: user.companyId } : undefined;
 
-  // Fetch companies this manager can see
   const companies = await prisma.company.findMany({
     where: companyFilter,
     orderBy: { name: 'asc' },
   });
 
-  // Aggregate stats per company using raw counts (no groupBy _count issue)
   const stats = await Promise.all(
     companies.map(async (company) => {
       const where = { companyId: company.id };
-
       const [total, unassigned, pendingCall, siteVisit, followup, converted] = await Promise.all([
         prisma.lead.count({ where }),
         prisma.lead.count({ where: { ...where, status: 'UNASSIGNED' } }),
@@ -32,31 +27,33 @@ export default async function ManagerDashboard() {
         prisma.lead.count({ where: { ...where, OR: [{ lastLeadStatus: 'INTERESTED' }, { status: 'SCHEDULED' }] } }),
         prisma.lead.count({ where: { ...where, lastLeadStatus: 'CONVERTED' } }),
       ]);
-
       return { ...company, total, unassigned, pendingCall, siteVisit, followup, converted };
     })
   );
 
-  const siteVisitLeads = await prisma.lead.findMany({
-    where: {
-      ...companyFilter,
-      lastLeadStatus: { in: ['SITE_VISIT_DONE', 'SEND_SITE_VISIT'] },
-      status: { not: 'CLOSED' }
-    },
-    orderBy: { updatedAt: 'desc' },
-    take: 20,
-    select: { id: true, name: true, phone: true, lastLeadStatus: true, assignedToId: true }
-  });
-
-  const recentLeads = await prisma.lead.findMany({
-    where: { source: 'MANUAL', ...companyFilter },
-    orderBy: { createdAt: 'desc' },
-    take: 10,
-    select: {
-      id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true,
-      company: { select: { name: true } }
-    }
-  });
+  const [siteVisitLeads, recentLeads, users] = await Promise.all([
+    prisma.lead.findMany({
+      where: { ...companyFilter, lastLeadStatus: { in: ['SITE_VISIT_DONE', 'SEND_SITE_VISIT'] }, status: { not: 'CLOSED' } },
+      orderBy: { updatedAt: 'desc' },
+      take: 20,
+      select: { id: true, name: true, phone: true, lastLeadStatus: true, assignedToId: true }
+    }),
+    prisma.lead.findMany({
+      where: { source: 'MANUAL', ...companyFilter },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, assignedToId: true,
+        company: { select: { name: true } },
+        assignedTo: { select: { name: true, role: true } }
+      }
+    }),
+    prisma.user.findMany({
+      where: { role: { in: ['TELECALLER', 'SITE_ENGINEER'] }, isActive: true, ...companyFilter },
+      select: { id: true, name: true, role: true },
+      orderBy: { name: 'asc' }
+    })
+  ]);
 
   return (
     <div className="p-4 space-y-4">
@@ -88,11 +85,11 @@ export default async function ManagerDashboard() {
             <div className="col-span-2 pt-3 border-t border-slate-50 grid grid-cols-3 gap-2">
               <div className="bg-slate-50 rounded-xl p-3 flex flex-col items-center justify-center text-center">
                 <span className="text-lg font-bold text-slate-700">{s.siteVisit}</span>
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Site Visits</span>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Visits</span>
               </div>
               <div className="bg-slate-50 rounded-xl p-3 flex flex-col items-center justify-center text-center">
                 <span className="text-lg font-bold text-slate-700">{s.followup}</span>
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Follow Ups</span>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Follow Up</span>
               </div>
               <div className="bg-slate-50 rounded-xl p-3 flex flex-col items-center justify-center text-center">
                 <span className="text-lg font-bold text-amber-600">{s.unassigned + s.pendingCall}</span>
@@ -107,36 +104,17 @@ export default async function ManagerDashboard() {
         <div className="p-8 text-center bg-white rounded-2xl border border-slate-100 space-y-2">
           <Building2 className="h-10 w-10 text-slate-300 mx-auto" />
           <p className="text-slate-500 font-semibold">No companies assigned yet.</p>
-          <p className="text-xs text-slate-400">Ask your admin to assign this manager account to a company.</p>
         </div>
       )}
 
-      <ManagerSiteVisitsPipeline initialLeads={siteVisitLeads} />
+      <ManagerSiteVisitsPipeline initialLeads={siteVisitLeads} users={users} />
 
       {recentLeads.length > 0 && (
         <div className="mt-8">
           <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">Recently Added Leads</h2>
           <div className="space-y-3">
             {recentLeads.map(lead => (
-              <div key={lead.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
-                <div>
-                  <div className="font-bold text-slate-800">{lead.name || 'Unknown'}</div>
-                  <div className="text-sm font-semibold text-slate-500">{lead.phone}</div>
-                  <div className="text-[10px] text-slate-400 mt-1">{formatDateTime(lead.createdAt)}</div>
-                </div>
-                <div className="text-right">
-                  <span className={`inline-block px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
-                    lead.lastLeadStatus === 'CONVERTED' ? 'bg-emerald-100 text-emerald-700' :
-                    lead.lastLeadStatus ? 'bg-brand-50 text-brand-600' :
-                    'bg-slate-100 text-slate-500'
-                  }`}>
-                    {lead.lastLeadStatus ? leadStatusCategoryLabel(lead.lastLeadStatus) : LEAD_STATUS_LABEL[lead.status] || 'Unassigned'}
-                  </span>
-                  {!user.companyId && lead.company && (
-                    <div className="text-[10px] text-slate-400 mt-1">{lead.company.name}</div>
-                  )}
-                </div>
-              </div>
+              <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} />
             ))}
           </div>
         </div>

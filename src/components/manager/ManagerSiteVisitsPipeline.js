@@ -1,19 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { MapPin, User, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+import { MapPin, ChevronDown } from 'lucide-react';
 import { leadStatusCategoryLabel } from '@/lib/constants';
 
-export default function ManagerSiteVisitsPipeline({ initialLeads }) {
+export default function ManagerSiteVisitsPipeline({ initialLeads, users }) {
   const [leads, setLeads] = useState(initialLeads);
-  const [users, setUsers] = useState([]);
   const [assigning, setAssigning] = useState(null);
-
-  useEffect(() => {
-    fetch('/api/manager/users').then(res => res.json()).then(data => {
-      setUsers(data.users || []);
-    });
-  }, []);
 
   async function handleAssign(leadId, userId) {
     setAssigning(leadId);
@@ -24,7 +17,6 @@ export default function ManagerSiteVisitsPipeline({ initialLeads }) {
         body: JSON.stringify({ leadId, userId })
       });
       if (res.ok) {
-        // Update local state to reflect new assignee
         setLeads(leads.map(l => l.id === leadId ? { ...l, assignedToId: userId, assignedTo: users.find(u => u.id === userId) } : l));
       } else {
         throw new Error('Failed to assign');
