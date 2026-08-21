@@ -235,13 +235,30 @@ export default function EngineerLeadCard({ lead, onUpdate, isUpdateMode = false 
           <AudioRecorder audioBase64={audioBase64} onAudioData={setAudioBase64} disabled={busy} />
         </div>
 
-        <button
-          onClick={submit}
-          disabled={busy || !status}
-          className="w-full bg-brand-600 text-white font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {busy ? 'Saving...' : isUpdateMode ? 'Update Status Again' : 'Save & Update Status'}
-        </button>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={submit}
+            disabled={busy || !status}
+            className="w-full bg-brand-600 text-white font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {busy ? 'Saving...' : isUpdateMode ? 'Update Status Again' : 'Save & Update Status'}
+          </button>
+          
+          {isUpdateMode && (
+            <button
+              onClick={() => {
+                setExpanded(false);
+                setStatus('');
+                setNotes('');
+                setAudioBase64('');
+              }}
+              disabled={busy}
+              className="w-full bg-slate-100 text-slate-500 font-bold text-sm px-4 py-3 rounded-xl hover:bg-slate-200 transition-colors"
+            >
+              Cancel Update
+            </button>
+          )}
+        </div>
       </div>
       </>
       )}
