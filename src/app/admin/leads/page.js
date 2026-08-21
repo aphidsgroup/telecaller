@@ -51,7 +51,7 @@ export default async function LeadsPage({ searchParams }) {
   const settings = await getSettings();
   const tz = str(settings, 'company.timezone');
 
-  const [leads, total, telecallers, sources, projects, cities, companies] = await Promise.all([
+  const [leads, total, recentlyContactedLeads, telecallers, sources, projects, cities, companies] = await Promise.all([
     prisma.lead.findMany({
       where,
       orderBy: [{ updatedAt: 'desc' }],
@@ -64,6 +64,16 @@ export default async function LeadsPage({ searchParams }) {
       },
     }),
     prisma.lead.count({ where }),
+    (!params.q && page === 1) ? prisma.lead.findMany({
+      where: { lastContactedAt: { not: null } },
+      orderBy: { lastContactedAt: 'desc' },
+      take: 5,
+      include: { 
+        assignedTo: { select: { id: true, name: true } }, 
+        company: { select: { name: true } },
+        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+      },
+    }) : Promise.resolve([]),
     prisma.user.findMany({
       where: { role: ROLE.TELECALLER },
       select: { id: true, name: true, isActive: true },
@@ -74,6 +84,26 @@ export default async function LeadsPage({ searchParams }) {
     prisma.lead.findMany({ distinct: ['city'], select: { city: true }, take: 60 }),
     prisma.company.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
   ]);
+
+  // Serialize dates for Client Components
+  function serializeDisp(disp) {
+    return {
+      ...disp,
+      submittedAt: disp.submittedAt instanceof Date ? disp.submittedAt.toISOString() : disp.submittedAt,
+    };
+  }
+  function serializeLead(lead) {
+    return {
+      ...lead,
+      createdAt: lead.createdAt instanceof Date ? lead.createdAt.toISOString() : lead.createdAt,
+      updatedAt: lead.updatedAt instanceof Date ? lead.updatedAt.toISOString() : lead.updatedAt,
+      lastContactedAt: lead.lastContactedAt instanceof Date ? lead.lastContactedAt.toISOString() : lead.lastContactedAt,
+      dispositions: lead.dispositions ? lead.dispositions.map(serializeDisp) : [],
+    };
+  }
+
+  const serializedLeads = leads.map(serializeLead);
+  const serializedRecent = recentlyContactedLeads.map(serializeLead);
 
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const qs = new URLSearchParams(
@@ -107,7 +137,22 @@ export default async function LeadsPage({ searchParams }) {
 
       <BulkLeadAdder companies={companies} />
 
-      <LeadTable telecallers={telecallers} leads={leads} tz={tz} />
+      {serializedRecent.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Recently Updated by Telecallers
+          </h2>
+          <LeadTable telecallers={telecallers} leads={serializedRecent} tz={tz} />
+        </div>
+      )}
+
+      {total > 0 && (
+        <div>
+          <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">All Leads</h2>
+          <LeadTable telecallers={telecallers} leads={serializedLeads} tz={tz} />
+        </div>
+      )}
 
       {pages > 1 ? (
         <div className="flex items-center justify-between text-sm text-slate-600">

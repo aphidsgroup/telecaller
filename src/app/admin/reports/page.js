@@ -33,7 +33,7 @@ export default async function ReportsPage({ searchParams }) {
     byProject,
     dispositionMix,
     callMix,
-    telecallers,
+    users,
   ] = await Promise.all([
     prisma.lead.count({ where: leadWhere }),
     prisma.lead.count({ where: { ...leadWhere, lastContactedAt: { not: null } } }),
@@ -53,41 +53,48 @@ export default async function ReportsPage({ searchParams }) {
       where: { submittedAt: { gte: from, lte: to } },
       _count: { _all: true },
     }),
-    prisma.user.findMany({ where: { role: ROLE.TELECALLER }, select: { id: true, name: true, dailyTarget: true } }),
+    prisma.user.findMany({ where: { role: { in: [ROLE.TELECALLER, ROLE.MANAGER, ROLE.SITE_ENGINEER] } }, select: { id: true, name: true, role: true, dailyTarget: true } }),
   ]);
 
-  const leaderboard = await Promise.all(
-    telecallers.map(async (t) => {
-      const [worked, calls, conv, visits, avg, idleSince, loginCount] = await Promise.all([
-        prisma.disposition.count({ where: { userId: t.id, submittedAt: { gte: from, lte: to } } }),
-        prisma.leadEvent.count({ where: { userId: t.id, type: 'CALL_CLICKED', at: { gte: from, lte: to } } }),
-        prisma.disposition.count({ where: { userId: t.id, leadStatus: 'CONVERTED', submittedAt: { gte: from, lte: to } } }),
-        prisma.disposition.count({ where: { userId: t.id, leadStatus: 'SEND_SITE_VISIT', submittedAt: { gte: from, lte: to } } }),
-        prisma.disposition.aggregate({
-          where: { userId: t.id, submittedAt: { gte: from, lte: to }, responseSeconds: { not: null } },
-          _avg: { responseSeconds: true },
-        }),
-        prisma.disposition.findFirst({
-          where: { userId: t.id },
-          orderBy: { submittedAt: 'desc' },
-          select: { submittedAt: true },
-        }),
-        prisma.loginSession.count({ where: { userId: t.id, loginAt: { gte: from, lte: to } } }),
-      ]);
-      return {
-        ...t,
-        worked,
-        calls,
-        conv,
-        visits,
-        loginCount,
-        avgSeconds: avg._avg.responseSeconds ? Math.round(avg._avg.responseSeconds) : null,
-        idleMinutes: idleSince ? Math.round((Date.now() - new Date(idleSince.submittedAt).getTime()) / 60000) : null,
-        conversion: worked ? Math.round((conv / worked) * 1000) / 10 : 0,
-      };
-    })
-  );
+  const telecallers = users.filter(u => u.role === ROLE.TELECALLER);
+  const managers = users.filter(u => u.role === ROLE.MANAGER);
+  const engineers = users.filter(u => u.role === ROLE.SITE_ENGINEER);
+
+  const getStats = async (t) => {
+    const [worked, calls, conv, visits, avg, idleSince, loginCount] = await Promise.all([
+      prisma.disposition.count({ where: { userId: t.id, submittedAt: { gte: from, lte: to } } }),
+      prisma.leadEvent.count({ where: { userId: t.id, type: 'CALL_CLICKED', at: { gte: from, lte: to } } }),
+      prisma.disposition.count({ where: { userId: t.id, leadStatus: 'CONVERTED', submittedAt: { gte: from, lte: to } } }),
+      prisma.disposition.count({ where: { userId: t.id, leadStatus: 'SEND_SITE_VISIT', submittedAt: { gte: from, lte: to } } }),
+      prisma.disposition.aggregate({
+        where: { userId: t.id, submittedAt: { gte: from, lte: to }, responseSeconds: { not: null } },
+        _avg: { responseSeconds: true },
+      }),
+      prisma.disposition.findFirst({
+        where: { userId: t.id },
+        orderBy: { submittedAt: 'desc' },
+        select: { submittedAt: true },
+      }),
+      prisma.loginSession.count({ where: { userId: t.id, loginAt: { gte: from, lte: to } } }),
+    ]);
+    return {
+      ...t,
+      worked,
+      calls,
+      conv,
+      visits,
+      loginCount,
+      avgSeconds: avg._avg.responseSeconds ? Math.round(avg._avg.responseSeconds) : null,
+      idleMinutes: idleSince ? Math.round((Date.now() - new Date(idleSince.submittedAt).getTime()) / 60000) : null,
+      conversion: worked ? Math.round((conv / worked) * 1000) / 10 : 0,
+    };
+  };
+
+  const leaderboard = await Promise.all(telecallers.map(getStats));
   leaderboard.sort((a, b) => b.worked - a.worked);
+
+  const managerLeaderboard = await Promise.all(managers.map(getStats));
+  const engineerLeaderboard = await Promise.all(engineers.map(getStats));
 
   const funnel = [
     { label: 'Leads uploaded', value: totalLeads },
@@ -152,65 +159,22 @@ export default async function ReportsPage({ searchParams }) {
 
       <section>
         <SectionTitle>Telecaller leaderboard</SectionTitle>
-        <div className="card overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="th">#</th>
-                <th className="th">Telecaller</th>
-                <th className="th">Logins (period)</th>
-                <th className="th">Leads worked</th>
-                <th className="th">Calls attempted</th>
-                <th className="th">Site visits</th>
-                <th className="th">Converted</th>
-                <th className="th">Conversion</th>
-                <th className="th">Avg. click to log</th>
-                <th className="th">Idle since last log</th>
-                <th className="th">Session History</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {leaderboard.map((l, i) => (
-                <tr key={l.id}>
-                  <td className="td font-semibold text-slate-400">{i + 1}</td>
-                  <td className="td font-semibold text-slate-900">{l.name}</td>
-                  <td className="td">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${
-                      l.loginCount >= 5 ? 'bg-emerald-100 text-emerald-700' :
-                      l.loginCount >= 2 ? 'bg-brand-50 text-brand-600' :
-                      l.loginCount === 1 ? 'bg-amber-50 text-amber-700' :
-                      'bg-rose-50 text-rose-600'
-                    }`}>
-                      {l.loginCount} {l.loginCount === 1 ? 'login' : 'logins'}
-                    </span>
-                  </td>
-                  <td className="td">
-                    <div className="flex items-center gap-2">
-                      <span className="w-8">{l.worked}</span>
-                      <div className="w-24">
-                        <Bar value={l.worked} max={maxWorked} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="td">{l.calls}</td>
-                  <td className="td">{l.visits}</td>
-                  <td className="td font-semibold text-emerald-700">{l.conv}</td>
-                  <td className="td">{l.conversion}%</td>
-                  <td className="td">{l.avgSeconds != null ? formatDuration(l.avgSeconds) : '-'}</td>
-                  <td className="td text-xs text-slate-500">
-                    {l.idleMinutes == null ? 'never logged' : `${formatDuration(l.idleMinutes * 60)}`}
-                  </td>
-                  <td className="td">
-                    <a href={`/admin/telecallers/${l.id}/sessions`} className="text-xs font-semibold text-brand-600 hover:underline">
-                      View sessions →
-                    </a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <UserActivityTable users={leaderboard} maxWorked={maxWorked} />
       </section>
+
+      {managerLeaderboard.length > 0 && (
+        <section>
+          <SectionTitle>Manager activity</SectionTitle>
+          <UserActivityTable users={managerLeaderboard} maxWorked={Math.max(1, ...managerLeaderboard.map(l => l.worked))} />
+        </section>
+      )}
+
+      {engineerLeaderboard.length > 0 && (
+        <section>
+          <SectionTitle>Site Engineer activity</SectionTitle>
+          <UserActivityTable users={engineerLeaderboard} maxWorked={Math.max(1, ...engineerLeaderboard.map(l => l.worked))} />
+        </section>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-2">
         <section>
@@ -259,6 +223,69 @@ function BreakdownCard({ rows }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+function UserActivityTable({ users, maxWorked }) {
+  if (!users?.length) return <div className="card p-6 text-center text-sm text-slate-500">No users in this role.</div>;
+  return (
+    <div className="card overflow-x-auto">
+      <table className="min-w-full divide-y divide-slate-200">
+        <thead className="bg-slate-50">
+          <tr>
+            <th className="th">#</th>
+            <th className="th">Name</th>
+            <th className="th">Logins (period)</th>
+            <th className="th">Updates worked</th>
+            <th className="th">Calls attempted</th>
+            <th className="th">Site visits</th>
+            <th className="th">Bookings</th>
+            <th className="th">Conv. rate</th>
+            <th className="th">Avg handling</th>
+            <th className="th">Idle time</th>
+            <th className="th">Sessions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">
+          {users.map((l, i) => (
+            <tr key={l.id}>
+              <td className="td font-semibold text-slate-400">{i + 1}</td>
+              <td className="td font-semibold text-slate-900">{l.name}</td>
+              <td className="td">
+                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${
+                  l.loginCount >= 5 ? 'bg-emerald-100 text-emerald-700' :
+                  l.loginCount >= 2 ? 'bg-brand-50 text-brand-600' :
+                  l.loginCount === 1 ? 'bg-amber-50 text-amber-700' :
+                  'bg-rose-50 text-rose-600'
+                }`}>
+                  {l.loginCount} {l.loginCount === 1 ? 'login' : 'logins'}
+                </span>
+              </td>
+              <td className="td">
+                <div className="flex items-center gap-2">
+                  <span className="w-8">{l.worked}</span>
+                  <div className="w-24">
+                    <Bar value={l.worked} max={maxWorked} />
+                  </div>
+                </div>
+              </td>
+              <td className="td">{l.calls}</td>
+              <td className="td">{l.visits}</td>
+              <td className="td font-semibold text-emerald-700">{l.conv}</td>
+              <td className="td">{l.conversion}%</td>
+              <td className="td">{l.avgSeconds != null ? formatDuration(l.avgSeconds) : '-'}</td>
+              <td className="td text-xs text-slate-500">
+                {l.idleMinutes == null ? 'never logged' : `${formatDuration(l.idleMinutes * 60)}`}
+              </td>
+              <td className="td">
+                <a href={`/admin/telecallers/${l.id}/sessions`} className="text-xs font-semibold text-brand-600 hover:underline">
+                  Session History &rarr;
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

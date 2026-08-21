@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LEAD_STATUS_CATEGORY } from '@/lib/constants';
 
@@ -9,6 +9,7 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [duplicates, setDuplicates] = useState([]);
   
   const [form, setForm] = useState({
     companyId: userCompanyId || (companies.length > 0 ? companies[0].id : ''),
@@ -22,6 +23,25 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
     starting: 'Immediately',
     status: 'UNASSIGNED'
   });
+
+  useEffect(() => {
+    if (form.phone.length >= 10) {
+      const timer = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/manager/search?q=${encodeURIComponent(form.phone)}`);
+          if (res.ok) {
+            const data = await res.json();
+            setDuplicates(data.leads || []);
+          }
+        } catch (e) {
+          // ignore
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setDuplicates([]);
+    }
+  }, [form.phone]);
 
   async function submit(e) {
     e.preventDefault();
@@ -81,6 +101,19 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
           <div>
             <label className="label">Phone Number *</label>
             <input type="tel" className="input" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} required placeholder="e.g. 9876543210" />
+            {duplicates.length > 0 && (
+              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-wide">⚠ Lead Already Exists</p>
+                <div className="mt-1 space-y-1">
+                  {duplicates.map(dup => (
+                    <div key={dup.id} className="text-xs text-amber-700 flex justify-between">
+                      <span>{dup.name || 'Unknown'} ({dup.phone})</span>
+                      <span className="font-semibold">{dup.lastLeadStatus || dup.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
