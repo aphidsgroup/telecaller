@@ -11,7 +11,12 @@ export const GET = route(async (req) => {
   const leads = await prisma.lead.findMany({
     where: { assignedToId: user.id },
     orderBy: { assignedAt: 'desc' },
-    include: { dispositions: { take: 1, orderBy: { submittedAt: 'desc' }, select: { notes: true, audioBase64: true } } }
+    include: { 
+      dispositions: { 
+        orderBy: { submittedAt: 'desc' }, 
+        select: { notes: true, audioBase64: true, userId: true, leadStatus: true, submittedAt: true } 
+      } 
+    }
   });
 
   return ok({ leads });

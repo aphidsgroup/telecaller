@@ -2,12 +2,14 @@
 
 import { useState, useRef } from 'react';
 import { MapPin, Phone, User, Calendar, CheckCircle, Navigation, Mic, Square, Trash2 } from 'lucide-react';
+import fixWebmDuration from 'fix-webm-duration';
 import { LEAD_STATUS_CATEGORY } from '@/lib/constants';
 
 function AudioRecorder({ audioBase64, onAudioData, disabled }) {
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const startTimeRef = useRef(0);
 
   const startRecording = async () => {
     try {
@@ -20,8 +22,14 @@ function AudioRecorder({ audioBase64, onAudioData, disabled }) {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      mediaRecorder.onstop = async () => {
+        const duration = Date.now() - startTimeRef.current;
+        const initialBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        
+        const blob = await new Promise(resolve => {
+          fixWebmDuration(initialBlob, duration, (fixedBlob) => resolve(fixedBlob));
+        });
+
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
@@ -30,6 +38,7 @@ function AudioRecorder({ audioBase64, onAudioData, disabled }) {
         stream.getTracks().forEach((track) => track.stop());
       };
 
+      startTimeRef.current = Date.now();
       mediaRecorder.start();
       setRecording(true);
     } catch (err) {
@@ -87,7 +96,7 @@ function AudioRecorder({ audioBase64, onAudioData, disabled }) {
   );
 }
 
-export default function EngineerLeadCard({ lead, onUpdate }) {
+export default function EngineerLeadCard({ lead, onUpdate, isUpdateMode = false }) {
   const [status, setStatus] = useState('');
   const [notes, setNotes] = useState('');
   const [audioBase64, setAudioBase64] = useState('');
@@ -192,12 +201,12 @@ export default function EngineerLeadCard({ lead, onUpdate }) {
           <AudioRecorder audioBase64={audioBase64} onAudioData={setAudioBase64} disabled={busy} />
         </div>
 
-        <button 
-          onClick={submit} 
-          disabled={busy || !status} 
-          className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-brand-500/20 active:scale-[0.98] mt-4"
+        <button
+          onClick={submit}
+          disabled={busy || !status}
+          className="w-full bg-brand-600 text-white font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {busy ? 'Saving...' : 'Save & Update Lead'}
+          {busy ? 'Saving...' : isUpdateMode ? 'Update Status Again' : 'Save & Update Status'}
         </button>
       </div>
     </div>

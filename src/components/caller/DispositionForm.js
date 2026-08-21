@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Loader2, MessageSquare, Send, Mic, Square, Trash2 } from 'lucide-react';
+import fixWebmDuration from 'fix-webm-duration';
 import { CALL_CATEGORY, CALLBACK_CATEGORIES, LEAD_STATUS_CATEGORY, TERMINAL_LEAD_STATUSES } from '@/lib/constants';
 
 function ChipGroup({ options, value, onChange, disabled }) {
@@ -30,6 +31,7 @@ function AudioRecorder({ audioBase64, onAudioData, disabled }) {
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
+  const startTimeRef = useRef(0);
 
   const startRecording = async () => {
     try {
@@ -42,8 +44,15 @@ function AudioRecorder({ audioBase64, onAudioData, disabled }) {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      mediaRecorder.onstop = async () => {
+        const duration = Date.now() - startTimeRef.current;
+        const initialBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        
+        // Fix Chrome WebM duration bug
+        const blob = await new Promise(resolve => {
+          fixWebmDuration(initialBlob, duration, (fixedBlob) => resolve(fixedBlob));
+        });
+
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
@@ -52,6 +61,7 @@ function AudioRecorder({ audioBase64, onAudioData, disabled }) {
         stream.getTracks().forEach((track) => track.stop());
       };
 
+      startTimeRef.current = Date.now();
       mediaRecorder.start();
       setRecording(true);
     } catch (err) {

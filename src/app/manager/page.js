@@ -34,7 +34,8 @@ export default async function ManagerDashboard() {
   const [
     siteVisitLeads,
     recentLeads,
-    recentlyContactedLeads,
+    recentTelecallerDisps,
+    recentEngineerDisps,
     users
   ] = await Promise.all([
     prisma.lead.findMany({
@@ -58,16 +59,36 @@ export default async function ManagerDashboard() {
         dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
       }
     }),
-    prisma.lead.findMany({
-      where: { lastContactedAt: { not: null }, ...companyFilter },
-      orderBy: { lastContactedAt: 'desc' },
-      take: 15,
+    prisma.disposition.findMany({
+      where: { user: { role: 'TELECALLER' }, lead: { ...companyFilter } },
+      orderBy: { submittedAt: 'desc' },
+      take: 50,
       select: {
-        id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, updatedAt: true, assignedToId: true,
-        lastContactedAt: true,
-        company: { select: { name: true } },
-        assignedTo: { select: { name: true, role: true } },
-        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+        lead: {
+          select: {
+            id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, updatedAt: true, assignedToId: true,
+            lastContactedAt: true,
+            company: { select: { name: true } },
+            assignedTo: { select: { name: true, role: true } },
+            dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+          }
+        }
+      }
+    }),
+    prisma.disposition.findMany({
+      where: { user: { role: 'SITE_ENGINEER' }, lead: { ...companyFilter } },
+      orderBy: { submittedAt: 'desc' },
+      take: 50,
+      select: {
+        lead: {
+          select: {
+            id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, updatedAt: true, assignedToId: true,
+            lastContactedAt: true,
+            company: { select: { name: true } },
+            assignedTo: { select: { name: true, role: true } },
+            dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+          }
+        }
       }
     }),
     prisma.user.findMany({
@@ -76,6 +97,16 @@ export default async function ManagerDashboard() {
       orderBy: { name: 'asc' }
     })
   ]);
+
+  // Deduplicate leads from dispositions
+  const extractUniqueLeads = (disps, limit) => {
+    const map = new Map();
+    disps.forEach(d => { if (!map.has(d.lead.id)) map.set(d.lead.id, d.lead); });
+    return Array.from(map.values()).slice(0, limit);
+  };
+
+  const recentlyContactedByTelecaller = extractUniqueLeads(recentTelecallerDisps, 15);
+  const recentlyContactedByEngineer = extractUniqueLeads(recentEngineerDisps, 15);
 
   // Serialize dates — Next.js App Router cannot pass Date objects to 'use client' components.
   // Prisma returns Date instances; we must convert them to ISO strings first.
@@ -90,13 +121,15 @@ export default async function ManagerDashboard() {
       ...lead,
       createdAt: lead.createdAt instanceof Date ? lead.createdAt.toISOString() : lead.createdAt,
       updatedAt: lead.updatedAt instanceof Date ? lead.updatedAt.toISOString() : lead.updatedAt,
+      lastContactedAt: lead.lastContactedAt instanceof Date ? lead.lastContactedAt.toISOString() : lead.lastContactedAt,
       dispositions: lead.dispositions ? lead.dispositions.map(serializeDisp) : [],
     };
   }
 
   const serializedSiteVisitLeads = siteVisitLeads.map(serializeLead);
   const serializedRecentLeads = recentLeads.map(serializeLead);
-  const serializedContactedLeads = recentlyContactedLeads.map(serializeLead);
+  const serializedContactedByTelecaller = recentlyContactedByTelecaller.map(serializeLead);
+  const serializedContactedByEngineer = recentlyContactedByEngineer.map(serializeLead);
 
   return (
     <div className="p-4 space-y-4">
@@ -167,14 +200,28 @@ export default async function ManagerDashboard() {
 
       <ManagerSiteVisitsPipeline initialLeads={serializedSiteVisitLeads} users={users} />
 
-      {serializedContactedLeads.length > 0 && (
+      {serializedContactedByEngineer.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Recently Updated by Site Engineer
+          </h2>
+          <div className="space-y-3">
+            {serializedContactedByEngineer.map(lead => (
+              <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {serializedContactedByTelecaller.length > 0 && (
         <div className="mt-8">
           <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             Recently Updated by Telecaller
           </h2>
           <div className="space-y-3">
-            {serializedContactedLeads.map(lead => (
+            {serializedContactedByTelecaller.map(lead => (
               <ManagerLeadCard key={lead.id} initialLead={lead} users={users} showCompany={!user.companyId} />
             ))}
           </div>
