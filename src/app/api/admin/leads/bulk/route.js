@@ -6,7 +6,7 @@ import { normalisePhone } from '@/lib/format';
 
 export const POST = route(async (req) => {
   await requireAdmin();
-  const { numbers } = await readJson(req);
+  const { numbers, companyId } = await readJson(req);
   if (!Array.isArray(numbers) || numbers.length === 0) {
     return fail(400, 'No numbers provided');
   }
@@ -27,6 +27,7 @@ export const POST = route(async (req) => {
         phoneKey: key,
         status: LEAD_STATUS.NEW,
         source: 'Bulk Add',
+        companyId: companyId || null,
         history: {
           create: {
             type: 'IMPORTED',

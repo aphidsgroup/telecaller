@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function BulkLeadAdder() {
+export default function BulkLeadAdder({ companies = [] }) {
   const router = useRouter();
   const [numbers, setNumbers] = useState('');
+  const [companyId, setCompanyId] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -21,7 +22,7 @@ export default function BulkLeadAdder() {
       const res = await fetch('/api/admin/leads/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ numbers: list }),
+        body: JSON.stringify({ numbers: list, companyId: companyId || null }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'Failed to add leads');
@@ -46,6 +47,17 @@ export default function BulkLeadAdder() {
         )}
       </div>
       <form onSubmit={submit} className="flex flex-col gap-3">
+        <select 
+          className="input" 
+          value={companyId} 
+          onChange={e => setCompanyId(e.target.value)}
+          disabled={busy}
+        >
+          <option value="">No Company (Unassigned)</option>
+          {companies.map(c => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
         <textarea
           value={numbers}
           onChange={(e) => setNumbers(e.target.value)}

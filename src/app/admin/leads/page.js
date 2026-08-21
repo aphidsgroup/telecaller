@@ -101,7 +101,7 @@ export default async function LeadsPage({ searchParams }) {
         companies={companies}
       />
 
-      <BulkLeadAdder />
+      <BulkLeadAdder companies={companies} />
 
       <LeadTable telecallers={telecallers} leads={leads} tz={tz} />
 
