@@ -7,7 +7,7 @@ import NotificationBell from '@/components/admin/NotificationBell';
 import prisma from '@/lib/prisma';
 import { headers } from 'next/headers';
 import {
-  LayoutDashboard, Users, UsersRound, FileDown, Settings, Building, AlertTriangle, FileText, CloudUpload, BarChart3
+  LayoutDashboard, Users, UsersRound, FileDown, Settings, Building, AlertTriangle, FileText, CloudUpload, BarChart3, Clock
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic';
 const NAV = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/admin/companies', label: 'Companies', icon: Building },
+  { href: '/admin/followups', label: 'Follow-ups', icon: Clock },
   { href: '/admin/leads', label: 'Leads', icon: FileText },
   { href: '/admin/telecallers', label: 'Telecallers', icon: Users },
   { href: '/admin/managers', label: 'Managers', icon: UsersRound },

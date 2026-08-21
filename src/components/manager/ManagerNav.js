@@ -3,13 +3,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, PlusCircle, LogOut, Users } from 'lucide-react';
+import { Home, PlusCircle, LogOut, Users, Clock } from 'lucide-react';
 
 export default function ManagerNav() {
   const pathname = usePathname();
   
   const navs = [
     { name: 'Dashboard', href: '/manager', icon: Home },
+    { name: 'Follow-ups', href: '/manager/followups', icon: Clock },
     { name: 'Leads', href: '/manager/leads', icon: Users },
     { name: 'Add Lead', href: '/manager/add-lead', icon: PlusCircle },
   ];

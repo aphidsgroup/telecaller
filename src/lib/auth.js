@@ -96,7 +96,13 @@ export async function requireRole(role) {
 }
 
 export const requireAdmin = () => requireRole(ROLE.ADMIN);
-export const requireManager = () => requireRole(ROLE.MANAGER);
+export async function requireManager() {
+  const user = await requireUser();
+  if (user.role !== ROLE.MANAGER && user.role !== ROLE.ADMIN) {
+    throw new HttpError(403, 'You do not have access to this area');
+  }
+  return user;
+}
 export const requireTelecaller = () => requireRole(ROLE.TELECALLER);
 export const requireEngineer = () => requireRole(ROLE.SITE_ENGINEER);
 

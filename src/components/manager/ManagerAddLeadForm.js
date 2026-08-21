@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LEAD_STATUS_CATEGORY } from '@/lib/constants';
+import ManagerLiveSearch from '@/components/manager/ManagerLiveSearch';
 
 export default function ManagerAddLeadForm({ companies, userCompanyId }) {
   const router = useRouter();
@@ -71,42 +72,15 @@ export default function ManagerAddLeadForm({ companies, userCompanyId }) {
     <div className="p-4 space-y-6">
       
       {/* Dedicated Search Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 z-50">
         <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           Check Existing Lead
         </h2>
-        <div className="relative">
-          <input 
-            type="tel" 
-            placeholder="Search phone number to check if lead exists..." 
-            className="w-full text-sm py-3 pl-4 pr-10 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold"
-            value={form.phone}
-            onChange={e => setForm({...form, phone: e.target.value})}
-          />
-        </div>
-        {duplicates.length > 0 && (
-          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-            <p className="text-[11px] font-bold text-amber-800 uppercase tracking-wide flex items-center gap-1.5 mb-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              Lead Already Exists in Database
-            </p>
-            <div className="space-y-2">
-              {duplicates.map(dup => (
-                <div key={dup.id} className="text-xs text-amber-900 bg-amber-100/50 p-2 rounded-lg flex flex-col gap-1">
-                  <div className="flex justify-between font-bold">
-                    <span>{dup.name || 'Unknown'}</span>
-                    <span>{dup.phone}</span>
-                  </div>
-                  <div className="flex justify-between text-amber-700">
-                    <span>Status: {LEAD_STATUS_CATEGORY[dup.lastLeadStatus] || dup.status}</span>
-                    <span>Assigned: {dup.assignedTo?.name || 'Unassigned'}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <ManagerLiveSearch 
+          placeholder="Search phone number to check if lead exists..." 
+          onSearch={(val) => setForm({...form, phone: val})}
+        />
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">

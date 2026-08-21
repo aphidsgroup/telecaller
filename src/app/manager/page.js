@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { Building2 } from 'lucide-react';
+import { Building2, Search, Phone, User, Calendar, MapPin, Play, Clock, CheckCircle, Activity, FileSpreadsheet } from 'lucide-react';
+import ManagerLiveSearch from '@/components/manager/ManagerLiveSearch';
 import ManagerSiteVisitsPipeline from '@/components/manager/ManagerSiteVisitsPipeline';
 import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
 
@@ -144,17 +145,9 @@ export default async function ManagerDashboard() {
       </div>
         
       {/* Search Bar */}
-      <form action="/manager/leads" method="GET" className="relative mb-6">
-        <input 
-          type="text" 
-          name="q" 
-          placeholder="Search leads by phone number or name..." 
-          className="w-full text-sm py-3 pl-4 pr-10 rounded-xl bg-white shadow-sm border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
-        />
-        <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-500">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        </button>
-      </form>
+      <div className="mb-6">
+        <ManagerLiveSearch placeholder="Search leads by phone number or name..." />
+      </div>
 
       {stats.map(s => (
         <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
