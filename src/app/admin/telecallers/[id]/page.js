@@ -45,7 +45,7 @@ export default async function TelecallerDetail({ params }) {
       where: { assignedToId: id, status: { in: [LEAD_STATUS.ACTIVE, LEAD_STATUS.IN_PROGRESS] } },
       select: { id: true, name: true, status: true, servedAt: true, inProgressAt: true },
     }),
-    prisma.loginSession.findMany({ where: { userId: id }, orderBy: { loginAt: 'desc' }, take: 10 }),
+    prisma.loginSession.findMany({ where: { userId: id }, orderBy: { loginAt: 'desc' }, take: 100 }),
     prisma.disposition.findMany({
       where: { userId: id },
       orderBy: { submittedAt: 'desc' },

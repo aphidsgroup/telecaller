@@ -2,6 +2,7 @@ import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { Bar, SectionTitle } from '@/components/admin/Ui';
 import TelecallerAdmin from '@/components/admin/TelecallerAdmin';
+import TelecallerAttendance from '@/components/admin/TelecallerAttendance';
 import { LEAD_STATUS, ROLE } from '@/lib/constants';
 import { formatDuration, relativeTime } from '@/lib/format';
 import { getSettings } from '@/lib/settings';
@@ -15,6 +16,9 @@ export default async function TelecallersPage() {
   const settings = await getSettings();
   const { start, end } = await todayRangeUtc(settings);
   const now = new Date();
+  
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const currentMonthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
 
   const users = await prisma.user.findMany({
     where: { role: ROLE.TELECALLER },
@@ -23,6 +27,14 @@ export default async function TelecallersPage() {
       id: true, name: true, email: true, phone: true, isActive: true, dailyTarget: true,
       lastLoginAt: true, lastSeenAt: true, role: true
     },
+  });
+
+  const sessions = await prisma.loginSession.findMany({
+    where: {
+      userId: { in: users.map(u => u.id) },
+      loginAt: { gte: currentMonthStart }
+    },
+    select: { userId: true, loginAt: true, lastSeenAt: true }
   });
 
   const rows = await Promise.all(
@@ -72,6 +84,8 @@ export default async function TelecallersPage() {
           attributable.
         </p>
       </div>
+
+      <TelecallerAttendance users={users} sessions={sessions} currentMonth={currentMonthName} />
 
       <TelecallerAdmin />
 
