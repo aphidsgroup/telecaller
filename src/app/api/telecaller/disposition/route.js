@@ -21,6 +21,7 @@ export const POST = route(async (req) => {
     audioBase64: body.audioBase64,
     callClickedAt: body.callClickedAt,
     queuedOffline: Boolean(body.queuedOffline),
+    clientDetails: body.clientDetails || null,
   });
 
   const { lead, resumed } = await serveCurrentLead(user.id);

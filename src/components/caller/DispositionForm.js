@@ -133,6 +133,73 @@ export default function DispositionForm({
           />
         </div>
 
+        {/* ── Client Details ───────────────────────────────────── */}
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+          <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Client Details (optional)</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Client Name</label>
+              <input
+                type="text"
+                className="input"
+                placeholder="Full name"
+                value={form.clientName}
+                onChange={(e) => set({ clientName: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Location Area</label>
+              <input
+                type="text"
+                className="input"
+                placeholder="e.g. Indiranagar"
+                value={form.locationArea}
+                onChange={(e) => set({ locationArea: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Built-up Area</label>
+              <input
+                type="text"
+                className="input"
+                placeholder="e.g. 1200 sqft"
+                value={form.builtUpArea}
+                onChange={(e) => set({ builtUpArea: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Type of Lead</label>
+              <input
+                type="text"
+                className="input"
+                placeholder="e.g. Residential"
+                value={form.typeOfLead}
+                onChange={(e) => set({ typeOfLead: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Cash or Loan</label>
+              <select className="input" value={form.funding} onChange={(e) => set({ funding: e.target.value })}>
+                <option value="">-- Select --</option>
+                <option value="Cash">Cash</option>
+                <option value="Loan">Loan</option>
+                <option value="Cash and Loan">Cash and Loan</option>
+                <option value="Not Decided">Not Decided</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Starting</label>
+              <select className="input" value={form.starting} onChange={(e) => set({ starting: e.target.value })}>
+                <option value="">-- Select --</option>
+                <option value="Immediately">Immediately</option>
+                <option value="Within 1 month">Within 1 month</option>
+                <option value="Within 3 months">Within 3 months</option>
+                <option value="More than 3 months">More than 3 months</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         {/* Lead status */}
         <div>
           <label className="label">Lead status</label>

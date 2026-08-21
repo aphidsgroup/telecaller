@@ -16,7 +16,10 @@ import StatusBar from './StatusBar';
 
 import { Phone, PhoneOff, RefreshCw, Clock, WifiOff } from 'lucide-react';
 
-const EMPTY_FORM = { callCategory: '', leadStatus: '', notes: '', audioBase64: '' };
+const EMPTY_FORM = {
+  callCategory: '', leadStatus: '', notes: '', audioBase64: '',
+  clientName: '', locationArea: '', builtUpArea: '', typeOfLead: '', funding: '', starting: '',
+};
 
 export default function CallerWorkspace({ user }) {
   const [lead, setLead] = useState(null);
@@ -172,6 +175,14 @@ export default function CallerWorkspace({ user }) {
       notes: form.notes,
       audioBase64: form.audioBase64,
       callClickedAt: callClickedAt || lead.callClickedAt || null,
+      clientDetails: {
+        name: form.clientName || null,
+        locationArea: form.locationArea || null,
+        builtUpArea: form.builtUpArea || null,
+        typeOfLead: form.typeOfLead || null,
+        funding: form.funding || null,
+        starting: form.starting || null,
+      },
     };
 
     try {

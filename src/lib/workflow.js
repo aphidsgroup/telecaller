@@ -86,6 +86,7 @@ export async function submitDisposition({
   audioBase64 = null,
   callClickedAt = null,
   queuedOffline = false,
+  clientDetails = null,
 }) {
   if (!clientEventId) throw new HttpError(400, 'Missing clientEventId (idempotency key)');
   validateDisposition({ callCategory, leadStatus });
@@ -165,6 +166,22 @@ export async function submitDisposition({
     },
   });
 
+  // Build client detail updates — only overwrite fields that were actually filled in
+  const clientUpdate = {};
+  if (clientDetails) {
+    if (clientDetails.name) clientUpdate.name = clientDetails.name.trim();
+    if (clientDetails.locationArea) clientUpdate.city = clientDetails.locationArea.trim();
+    // Store rich details in extraData, merging with existing values
+    const existingLead = await prisma.lead.findUnique({ where: { id: leadId }, select: { extraData: true } });
+    const existingExtra = (existingLead?.extraData && typeof existingLead.extraData === 'object') ? existingLead.extraData : {};
+    const newExtra = { ...existingExtra };
+    if (clientDetails.typeOfLead) newExtra['Type of Lead'] = clientDetails.typeOfLead.trim();
+    if (clientDetails.builtUpArea) newExtra['Built-up Area'] = clientDetails.builtUpArea.trim();
+    if (clientDetails.funding) newExtra['Funding'] = clientDetails.funding;
+    if (clientDetails.starting) newExtra['Starting'] = clientDetails.starting;
+    clientUpdate.extraData = newExtra;
+  }
+
   await prisma.lead.update({
     where: { id: leadId },
     data: {
@@ -180,6 +197,7 @@ export async function submitDisposition({
       flaggedForReview: false,
       flagReason: null,
       flaggedAt: null,
+      ...clientUpdate,
     },
   });
 
