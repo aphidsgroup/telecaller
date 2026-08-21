@@ -61,17 +61,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
             <a href={`tel:${lead.phone}`} className="text-brand-600">{lead.phone}</a>
           </div>
           {lead.createdAt && (
-            <div className="text-[10px] text-slate-400 mt-1">{formatDateTime(lead.createdAt || lead.updatedAt)}</div>
-          )}
-          {lead.dispositions?.[0]?.notes && (
-            <div className="text-[11px] text-slate-600 mt-2 italic border-l-2 border-brand-200 pl-2">
-              "{lead.dispositions[0].notes}"
-            </div>
-          )}
-          {lead.dispositions?.[0]?.audioBase64 && (
-            <div className="mt-2">
-              <audio src={lead.dispositions[0].audioBase64} controls className="h-8 max-w-[200px]" />
-            </div>
+            <div className="text-[10px] text-slate-400 mt-1">Added: {formatDateTime(lead.createdAt)}</div>
           )}
         </div>
         <div className="text-right">
@@ -87,6 +77,38 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
           )}
         </div>
       </div>
+
+      {/* Lead Journey Timeline */}
+      {lead.dispositions && lead.dispositions.length > 0 && (
+        <div className="mt-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-3">Lead Journey</h4>
+          <div className="space-y-3 relative before:absolute before:inset-0 before:ml-[5px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+            {lead.dispositions.map((disp, idx) => (
+              <div key={idx} className="relative flex items-start gap-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-brand-400 mt-1 shrink-0 relative z-10 border-2 border-white shadow-sm" />
+                <div className="flex-1">
+                  <div className="text-[11px] font-bold text-slate-700 flex justify-between items-start">
+                    <span>{leadStatusCategoryLabel(disp.leadStatus)}</span>
+                    <span className="text-[9px] font-semibold text-slate-400 text-right">{formatDateTime(disp.submittedAt)}</span>
+                  </div>
+                  <div className="text-[10px] font-semibold text-brand-600 mt-0.5">by {disp.user?.name} {disp.user?.role === 'SITE_ENGINEER' ? '(Engineer)' : '(Telecaller)'}</div>
+                  
+                  {disp.notes && (
+                    <div className="text-[11px] text-slate-600 mt-1.5 italic border-l-2 border-brand-200 pl-2">
+                      "{disp.notes}"
+                    </div>
+                  )}
+                  {disp.audioBase64 && (
+                    <div className="mt-1.5">
+                      <audio src={disp.audioBase64} controls className="h-6 max-w-[150px]" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">

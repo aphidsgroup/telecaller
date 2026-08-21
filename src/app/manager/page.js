@@ -38,7 +38,8 @@ export default async function ManagerDashboard() {
       take: 20,
       select: { 
         id: true, name: true, phone: true, lastLeadStatus: true, assignedToId: true,
-        dispositions: { take: 1, orderBy: { submittedAt: 'desc' }, select: { notes: true, audioBase64: true } }
+        createdAt: true, updatedAt: true,
+        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
       }
     }),
     prisma.lead.findMany({
@@ -46,10 +47,10 @@ export default async function ManagerDashboard() {
       orderBy: { createdAt: 'desc' },
       take: 10,
       select: {
-        id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, assignedToId: true,
+        id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, updatedAt: true, assignedToId: true,
         company: { select: { name: true } },
         assignedTo: { select: { name: true, role: true } },
-        dispositions: { take: 1, orderBy: { submittedAt: 'desc' }, select: { notes: true, audioBase64: true } }
+        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
       }
     }),
     prisma.user.findMany({

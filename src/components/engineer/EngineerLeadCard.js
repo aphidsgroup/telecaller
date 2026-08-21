@@ -171,7 +171,7 @@ export default function EngineerLeadCard({ lead, onUpdate }) {
             onChange={e => setStatus(e.target.value)}
           >
             <option value="">-- Select Status --</option>
-            {LEAD_STATUS_CATEGORY.filter(s => ['SITE_VISIT_DONE', 'QUOTATION_SENT', 'NEGOTIATING', 'INTERESTED', 'NOT_INTERESTED', 'CONVERTED'].includes(s.value)).map(s => (
+            {LEAD_STATUS_CATEGORY.filter(s => ['SITE_VISIT_DONE', 'QUOTATION_SENT', 'NEGOTIATING', 'INTERESTED', 'NOT_INTERESTED', 'CONVERTED', 'COMING_TO_OFFICE'].includes(s.value)).map(s => (
               <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
