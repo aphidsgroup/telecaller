@@ -160,6 +160,7 @@ export default function LeadTable({ leads, telecallers, tz }) {
                     ))}
                   </select>
                 </td>
+                <td className="td">
                   <div>
                     <select
                       className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded px-1 py-0.5 hover:bg-slate-100 cursor-pointer w-full max-w-[200px] truncate mb-2"
