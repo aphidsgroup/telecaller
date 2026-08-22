@@ -5,7 +5,7 @@ import ManagerLiveSearch from '@/components/manager/ManagerLiveSearch';
 import ManagerSiteVisitsPipeline from '@/components/manager/ManagerSiteVisitsPipeline';
 import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 export const metadata = { title: 'Manager Dashboard' };
 
 export default async function ManagerDashboard() {
@@ -46,7 +46,7 @@ export default async function ManagerDashboard() {
       select: { 
         id: true, name: true, phone: true, lastLeadStatus: true, assignedToId: true,
         createdAt: true, updatedAt: true,
-        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
       }
     }),
     prisma.lead.findMany({
@@ -57,7 +57,7 @@ export default async function ManagerDashboard() {
         id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, updatedAt: true, assignedToId: true,
         company: { select: { name: true } },
         assignedTo: { select: { name: true, role: true } },
-        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
       }
     }),
     prisma.disposition.findMany({
@@ -71,7 +71,7 @@ export default async function ManagerDashboard() {
             lastContactedAt: true,
             company: { select: { name: true } },
             assignedTo: { select: { name: true, role: true } },
-            dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+            dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
           }
         }
       }
@@ -87,7 +87,7 @@ export default async function ManagerDashboard() {
             lastContactedAt: true,
             company: { select: { name: true } },
             assignedTo: { select: { name: true, role: true } },
-            dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+            dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
           }
         }
       }

@@ -67,7 +67,7 @@ export default async function LeadsPage({ searchParams }) {
       include: { 
         assignedTo: { select: { id: true, name: true } }, 
         company: { select: { name: true } },
-        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
       },
     }),
     prisma.lead.count({ where: freshWhere }),

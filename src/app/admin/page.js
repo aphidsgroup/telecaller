@@ -6,7 +6,7 @@ import { formatDateTime, formatDuration, relativeTime } from '@/lib/format';
 import { getSettings, str } from '@/lib/settings';
 import { todayRangeUtc } from '@/lib/schedule';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export const metadata = { title: 'Overview - Buildogram Admin' };
 
@@ -55,25 +55,39 @@ export default async function AdminOverview() {
     prisma.importLog.findFirst({ orderBy: { startedAt: 'desc' } }),
   ]);
 
-  const perCaller = await Promise.all(
-    telecallers.map(async (t) => {
-      const [done, queue, holding] = await Promise.all([
-        prisma.disposition.count({ where: { userId: t.id, submittedAt: { gte: start, lt: end } } }),
-        prisma.lead.count({
-          where: {
-            assignedToId: t.id,
-            status: { in: [LEAD_STATUS.ASSIGNED, LEAD_STATUS.ACTIVE, LEAD_STATUS.IN_PROGRESS, LEAD_STATUS.SCHEDULED] },
-          },
-        }),
-        prisma.lead.findFirst({
-          where: { assignedToId: t.id, status: { in: [LEAD_STATUS.ACTIVE, LEAD_STATUS.IN_PROGRESS] } },
-          select: { id: true, name: true, status: true, inProgressAt: true, servedAt: true },
-        }),
-      ]);
-      const online = t.lastSeenAt && now.getTime() - new Date(t.lastSeenAt).getTime() < 5 * 60000;
-      return { ...t, done, queue, holding, online };
-    })
-  );
+  // Batch all per-telecaller stats in 3 queries instead of N×3
+  const telecallerIds = telecallers.map(t => t.id);
+  const [callerDispsToday, callerQueueCounts, callerHolding] = await Promise.all([
+    prisma.disposition.groupBy({
+      by: ['userId'],
+      where: { userId: { in: telecallerIds }, submittedAt: { gte: start, lt: end } },
+      _count: { id: true },
+    }),
+    prisma.lead.groupBy({
+      by: ['assignedToId'],
+      where: {
+        assignedToId: { in: telecallerIds },
+        status: { in: [LEAD_STATUS.ASSIGNED, LEAD_STATUS.ACTIVE, LEAD_STATUS.IN_PROGRESS, LEAD_STATUS.SCHEDULED] },
+      },
+      _count: { id: true },
+    }),
+    prisma.lead.findMany({
+      where: {
+        assignedToId: { in: telecallerIds },
+        status: { in: [LEAD_STATUS.ACTIVE, LEAD_STATUS.IN_PROGRESS] },
+      },
+      select: { id: true, name: true, status: true, inProgressAt: true, servedAt: true, assignedToId: true },
+    }),
+  ]);
+
+  const dispMap = Object.fromEntries(callerDispsToday.map(r => [r.userId, r._count.id]));
+  const queueMap = Object.fromEntries(callerQueueCounts.map(r => [r.assignedToId, r._count.id]));
+  const holdingMap = Object.fromEntries(callerHolding.map(r => [r.assignedToId, r]));
+
+  const perCaller = telecallers.map(t => {
+    const online = t.lastSeenAt && now.getTime() - new Date(t.lastSeenAt).getTime() < 5 * 60000;
+    return { ...t, done: dispMap[t.id] || 0, queue: queueMap[t.id] || 0, holding: holdingMap[t.id] || null, online };
+  });
 
   return (
     <div className="space-y-6">

@@ -47,9 +47,9 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
         body: JSON.stringify({ leadId: lead.id, userId: selectedAssignee, message: followupMsg })
       });
       if (res.ok) {
-        setLead({ 
-          ...lead, 
-          assignedToId: selectedAssignee, 
+        setLead({
+          ...lead,
+          assignedToId: selectedAssignee,
           assignedTo: users.find(u => u.id === selectedAssignee),
           followupRequestedAt: new Date().toISOString(),
           followupAcceptedAt: null,
@@ -112,6 +112,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
         </div>
       )}
 
+      {/* Name & Phone */}
       <div className="flex justify-between items-start">
         <div>
           <div className="font-bold text-slate-800">{lead.name || 'Unknown'}</div>
@@ -137,7 +138,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
         </div>
       </div>
 
-      {/* Client Details */}
+      {/* Client Details from extraData */}
       {(lead.city || (lead.extraData && Object.keys(lead.extraData).length > 0)) && (
         <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
           <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Client Details</h4>
@@ -151,7 +152,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
             {lead.extraData && Object.entries(lead.extraData).map(([key, val]) => (
               <div key={key}>
                 <span className="text-slate-400 block text-[9px] uppercase">{key}</span>
-                <span className="font-semibold text-slate-700">{val}</span>
+                <span className="font-semibold text-slate-700">{String(val)}</span>
               </div>
             ))}
           </div>
@@ -160,9 +161,9 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
 
       {/* Lead Journey Timeline */}
       {lead.dispositions && lead.dispositions.length > 0 && (
-        <div className="mt-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
           <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-3">Lead Journey</h4>
-          <div className="space-y-3 relative before:absolute before:inset-0 before:ml-[5px] before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
+          <div className="space-y-3 relative before:absolute before:inset-0 before:ml-[5px] before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
             {lead.dispositions.map((disp, idx) => (
               <div key={idx} className="relative flex items-start gap-3">
                 <div className="w-2.5 h-2.5 rounded-full bg-brand-400 mt-1 shrink-0 relative z-10 border-2 border-white shadow-sm" />
@@ -171,16 +172,12 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
                     <span>{leadStatusCategoryLabel(disp.leadStatus)}</span>
                     <span className="text-[9px] font-semibold text-slate-400 text-right">{formatDateTime(disp.submittedAt)}</span>
                   </div>
-                  <div className="text-[10px] font-semibold text-brand-600 mt-0.5">by {disp.user?.name} {disp.user?.role === 'SITE_ENGINEER' ? '(Engineer)' : '(Telecaller)'}</div>
-                  
+                  <div className="text-[10px] font-semibold text-brand-600 mt-0.5">
+                    by {disp.user?.name} {disp.user?.role === 'SITE_ENGINEER' ? '(Engineer)' : '(Telecaller)'}
+                  </div>
                   {disp.notes && (
                     <div className="text-[11px] text-slate-600 mt-1.5 italic border-l-2 border-brand-200 pl-2">
                       &quot;{disp.notes}&quot;
-                    </div>
-                  )}
-                  {disp.audioBase64 && (
-                    <div className="mt-1.5">
-                      <audio src={disp.audioBase64} controls className="h-6 max-w-[150px]" />
                     </div>
                   )}
                 </div>
@@ -189,13 +186,14 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
           </div>
         </div>
       )}
-      
+
+      {/* Actions: Assign + Status */}
       <div className="pt-3 border-t border-slate-100">
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Assign To</span>
             <div className="relative">
-              <select 
+              <select
                 disabled={assigning}
                 value={selectedAssignee}
                 onChange={(e) => handleAssign(e.target.value)}
@@ -220,7 +218,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Update Status</span>
             <div className="relative">
-              <select 
+              <select
                 disabled={updating}
                 value={selectedStatus}
                 onChange={(e) => handleStatusChange(e.target.value)}
@@ -238,7 +236,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
 
         {/* Immediate Follow-up Request UI */}
         {!showFollowup ? (
-          <button 
+          <button
             onClick={() => setShowFollowup(true)}
             className="text-[11px] font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1.5"
           >
@@ -256,13 +254,13 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
               rows={2}
             />
             <div className="flex items-center justify-between">
-              <button 
+              <button
                 onClick={() => setShowFollowup(false)}
                 className="text-[10px] font-bold text-slate-500 hover:text-slate-700"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleRequestFollowup}
                 disabled={assigning || !selectedAssignee || !followupMsg.trim()}
                 className="bg-brand-600 text-white text-[11px] font-bold px-3 py-1.5 rounded hover:bg-brand-700 disabled:opacity-50 transition-colors"
@@ -276,4 +274,3 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
     </div>
   );
 }
-

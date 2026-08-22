@@ -148,6 +148,11 @@ model Lead {
   @@index([lastLeadStatus])
   @@index([flaggedForReview])
   @@index([createdAt])
+  @@index([updatedAt])
+  @@index([lastLeadStatus, status])
+  @@index([assignedToId, lastLeadStatus])
+  @@index([status, createdAt])
+  @@index([status, followUpAt])
 }
 
 model LeadEvent {

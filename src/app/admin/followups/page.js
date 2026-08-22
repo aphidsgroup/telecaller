@@ -20,9 +20,9 @@ export default async function AdminFollowupsPage({ searchParams }) {
       orderBy: { name: 'asc' }
     }),
     prisma.user.findMany({
-      where: { 
-        role: { in: ['TELECALLER', 'SITE_ENGINEER'] }, 
-        isActive: true, 
+      where: {
+        role: { in: ['TELECALLER', 'SITE_ENGINEER'] },
+        isActive: true,
         ...(user.companyId ? { companyId: user.companyId } : {})
       },
       select: { id: true, name: true, role: true },
@@ -34,7 +34,7 @@ export default async function AdminFollowupsPage({ searchParams }) {
     status: { notIn: ['CLOSED', 'NEW'] },
     lastLeadStatus: { not: null, notIn: DEAD_LEAD_STATUSES },
   };
-  
+
   if (companyIdFilter) where.companyId = companyIdFilter;
   if (q) {
     where.OR = [
@@ -48,19 +48,19 @@ export default async function AdminFollowupsPage({ searchParams }) {
     orderBy: { updatedAt: 'desc' },
     take: 250,
     select: {
-      id: true, name: true, phone: true, status: true, lastLeadStatus: true, updatedAt: true, assignedToId: true,
-      city: true, extraData: true,
-      followupMessage: true, followupRequestedAt: true, followupAcceptedAt: true, followupDeclinedAt: true,
+      id: true, name: true, phone: true, status: true, lastLeadStatus: true,
+      updatedAt: true, assignedToId: true, city: true, extraData: true,
+      followupMessage: true, followupRequestedAt: true,
+      followupAcceptedAt: true, followupDeclinedAt: true,
       company: { select: { name: true } },
       assignedTo: { select: { name: true, role: true } },
-      dispositions: { 
-        orderBy: { submittedAt: 'asc' }, 
-        select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } 
+      dispositions: {
+        orderBy: { submittedAt: 'asc' },
+        select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } }
       }
     }
   });
 
-  // Serialize dates
   function serializeDisp(disp) {
     return {
       ...disp,
@@ -87,12 +87,7 @@ export default async function AdminFollowupsPage({ searchParams }) {
     telecallerLeads = telecallerLeads.filter(l => l.extraData && l.extraData.Starting === startingFilter);
   }
 
-  const STARTING_ORDER = {
-    'Immediately': 1,
-    'Within 1 month': 2,
-    'Within 3 months': 3,
-    'More than 3 months': 4,
-  };
+  const STARTING_ORDER = { 'Immediately': 1, 'Within 1 month': 2, 'Within 3 months': 3, 'More than 3 months': 4 };
 
   telecallerLeads.sort((a, b) => {
     const aVal = (a.extraData && STARTING_ORDER[a.extraData.Starting]) ? STARTING_ORDER[a.extraData.Starting] : 99;
@@ -143,13 +138,10 @@ export default async function AdminFollowupsPage({ searchParams }) {
         <div className="text-center p-12 text-slate-400">No active follow-ups found.</div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2">
-          {/* Left column: Updated by Telecallers */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-              <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide">
-                Updated by Telecallers
-              </h2>
+              <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide">Updated by Telecallers</h2>
               <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-auto">
                 {telecallerLeads.length}
               </span>
@@ -167,13 +159,10 @@ export default async function AdminFollowupsPage({ searchParams }) {
             )}
           </div>
 
-          {/* Right column: Updated by Site Engineers */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide">
-                Updated by Site Engineers
-              </h2>
+              <h2 className="text-sm font-black text-slate-800 uppercase tracking-wide">Updated by Site Engineers</h2>
               <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full ml-auto">
                 {engineerLeads.length}
               </span>
@@ -195,4 +184,3 @@ export default async function AdminFollowupsPage({ searchParams }) {
     </div>
   );
 }
-
