@@ -48,6 +48,7 @@ export default async function AdminFollowupsPage({ searchParams }) {
     take: 100,
     select: {
       id: true, name: true, phone: true, status: true, lastLeadStatus: true, updatedAt: true, assignedToId: true,
+      city: true, extraData: true,
       followupMessage: true, followupRequestedAt: true, followupAcceptedAt: true, followupDeclinedAt: true,
       company: { select: { name: true } },
       assignedTo: { select: { name: true, role: true } },
