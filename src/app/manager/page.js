@@ -4,18 +4,26 @@ import { Building2, Search, Phone, User, Calendar, MapPin, Play, Clock, CheckCir
 import ManagerLiveSearch from '@/components/manager/ManagerLiveSearch';
 import ManagerSiteVisitsPipeline from '@/components/manager/ManagerSiteVisitsPipeline';
 import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
+import AutoSubmitForm from '@/components/shared/AutoSubmitForm';
 
-export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Manager Dashboard' };
 
-export default async function ManagerDashboard() {
+export default async function ManagerDashboard({ searchParams }) {
   const user = await getCurrentUser();
-  const companyFilter = user.companyId ? { companyId: user.companyId } : undefined;
+  const params = (await searchParams) || {};
+  const selectedCompanyId = params.companyId || '';
+  
+  const effectiveCompanyId = user.companyId || selectedCompanyId || undefined;
+  const companyFilter = effectiveCompanyId ? { companyId: effectiveCompanyId } : undefined;
 
-  const companies = await prisma.company.findMany({
-    where: companyFilter,
-    orderBy: { name: 'asc' },
-  });
+  const [allCompanies, companies] = await Promise.all([
+    !user.companyId ? prisma.company.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
+    prisma.company.findMany({
+      where: companyFilter,
+      orderBy: { name: 'asc' },
+    })
+  ]);
 
   const stats = await Promise.all(
     companies.map(async (company) => {
@@ -32,27 +40,14 @@ export default async function ManagerDashboard() {
     })
   );
 
-  const [
-    siteVisitLeads,
-    recentLeads,
-    recentTelecallerDisps,
-    recentEngineerDisps,
-    users
-  ] = await Promise.all([
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [siteVisitLeads, recentLeads, recentTelecallerDisps, recentEngineerDisps, users] = await Promise.all([
     prisma.lead.findMany({
-      where: { ...companyFilter, lastLeadStatus: { in: ['SITE_VISIT_DONE', 'SEND_SITE_VISIT'] }, status: { not: 'CLOSED' } },
+      where: { ...companyFilter, lastLeadStatus: { in: ['SITE_VISIT_DONE', 'SEND_SITE_VISIT'] } },
       orderBy: { updatedAt: 'desc' },
       take: 20,
-      select: { 
-        id: true, name: true, phone: true, lastLeadStatus: true, assignedToId: true,
-        createdAt: true, updatedAt: true,
-        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
-      }
-    }),
-    prisma.lead.findMany({
-      where: { source: 'MANUAL', status: 'UNASSIGNED', lastContactedAt: null, ...companyFilter },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
       select: {
         id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, updatedAt: true, assignedToId: true,
         company: { select: { name: true } },
@@ -60,8 +55,23 @@ export default async function ManagerDashboard() {
         dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
       }
     }),
-    prisma.disposition.findMany({
-      where: { user: { role: 'TELECALLER' }, lead: { ...companyFilter } },
+    prisma.lead.findMany({
+      where: { ...companyFilter, status: 'UNASSIGNED', lastLeadStatus: null, createdAt: { gte: thirtyDaysAgo } },
+      orderBy: { createdAt: 'desc' },
+      take: 15,
+      select: {
+        id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, updatedAt: true, assignedToId: true,
+        company: { select: { name: true } },
+        assignedTo: { select: { name: true, role: true } },
+        dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
+      }
+    }),
+    prisma.leadEvent.findMany({
+      where: {
+        type: 'DISPOSITION',
+        user: { role: 'TELECALLER' },
+        ...(effectiveCompanyId && { lead: { companyId: effectiveCompanyId } })
+      },
       orderBy: { submittedAt: 'desc' },
       take: 50,
       select: {
@@ -76,8 +86,12 @@ export default async function ManagerDashboard() {
         }
       }
     }),
-    prisma.disposition.findMany({
-      where: { user: { role: 'SITE_ENGINEER' }, lead: { ...companyFilter } },
+    prisma.leadEvent.findMany({
+      where: {
+        type: 'DISPOSITION',
+        user: { role: 'SITE_ENGINEER' },
+        ...(effectiveCompanyId && { lead: { companyId: effectiveCompanyId } })
+      },
       orderBy: { submittedAt: 'desc' },
       take: 50,
       select: {
@@ -99,7 +113,6 @@ export default async function ManagerDashboard() {
     })
   ]);
 
-  // Deduplicate leads from dispositions
   const extractUniqueLeads = (disps, limit) => {
     const map = new Map();
     disps.forEach(d => { if (!map.has(d.lead.id)) map.set(d.lead.id, d.lead); });
@@ -109,8 +122,6 @@ export default async function ManagerDashboard() {
   const recentlyContactedByTelecaller = extractUniqueLeads(recentTelecallerDisps, 15);
   const recentlyContactedByEngineer = extractUniqueLeads(recentEngineerDisps, 15);
 
-  // Serialize dates — Next.js App Router cannot pass Date objects to 'use client' components.
-  // Prisma returns Date instances; we must convert them to ISO strings first.
   function serializeDisp(disp) {
     return {
       ...disp,
@@ -145,9 +156,29 @@ export default async function ManagerDashboard() {
       </div>
         
       {/* Search Bar */}
-      <div className="mb-6">
+      <div className="mb-4">
         <ManagerLiveSearch placeholder="Search leads by phone number or name..." />
       </div>
+
+      {/* Company Filter (for Managers overseeing multiple companies) */}
+      {!user.companyId && (
+        <AutoSubmitForm className="mb-6 bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap items-center gap-3">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Filter Dashboard:</span>
+          <select
+            name="companyId"
+            defaultValue={selectedCompanyId}
+            className="input text-sm py-2 max-w-xs"
+          >
+            <option value="">All Companies</option>
+            {allCompanies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          {selectedCompanyId && (
+            <a href="/manager" className="text-xs font-bold text-slate-400 hover:text-slate-600 underline">
+              Clear
+            </a>
+          )}
+        </AutoSubmitForm>
+      )}
 
       {stats.map(s => (
         <div key={s.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -185,7 +216,7 @@ export default async function ManagerDashboard() {
       {stats.length === 0 && (
         <div className="p-8 text-center bg-white rounded-2xl border border-slate-100 space-y-2">
           <Building2 className="h-10 w-10 text-slate-300 mx-auto" />
-          <p className="text-slate-500 font-semibold">No companies assigned yet.</p>
+          <p className="text-slate-500 font-semibold">No companies match this filter.</p>
         </div>
       )}
 
