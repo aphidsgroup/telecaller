@@ -55,7 +55,7 @@ export default function MissedTargetModal() {
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 mb-6">
             <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 font-medium leading-relaxed">
-              <strong>Note:</strong> Calls marked as "Not Answered" do not count towards your daily target. Continued failure to meet the daily minimum target may lead to a salary reduction or performance review. Please ensure you meet your target today.
+              <strong>Note:</strong> Calls marked as &quot;Not Answered&quot; do not count towards your daily target. Continued failure to meet the daily minimum target may lead to a salary reduction or performance review. Please ensure you meet your target today.
             </p>
           </div>
 
