@@ -52,10 +52,8 @@ export default async function LeadsPage({ searchParams }) {
   const settings = await getSettings();
   const tz = str(settings, 'company.timezone');
 
-  // Only show fresh leads — not yet contacted AND not dead
-  const freshWhere = { ...where, lastLeadStatus: null, lastLeadStatus_not_in: undefined };
-  // Explicitly exclude dead leads (in case any slipped through with a dead status)
-  freshWhere.NOT = { lastLeadStatus: { in: DEAD_LEAD_STATUSES } };
+  // Only show fresh leads — not yet contacted (no disposition outcome set)
+  const freshWhere = { ...where, lastLeadStatus: null };
 
   const [leads, total, systemUsers, sources, projects, cities, companies] = await Promise.all([
     prisma.lead.findMany({

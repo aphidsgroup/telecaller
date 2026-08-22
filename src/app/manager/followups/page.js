@@ -2,9 +2,10 @@ import prisma from '@/lib/prisma';
 import { requireManager } from '@/lib/auth';
 import { Clock, Search } from 'lucide-react';
 import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
+import { DEAD_LEAD_STATUSES } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'Follow-ups' };
+export const metadata = { title: 'Company Follow-ups' };
 
 export default async function ManagerFollowupsPage({ searchParams }) {
   const user = await requireManager();
@@ -30,7 +31,7 @@ export default async function ManagerFollowupsPage({ searchParams }) {
 
   const where = {
     status: { notIn: ['CLOSED', 'NEW'] },
-    lastLeadStatus: { not: null }
+    lastLeadStatus: { not: null, notIn: DEAD_LEAD_STATUSES }
   };
   
   if (companyIdFilter) where.companyId = companyIdFilter;
