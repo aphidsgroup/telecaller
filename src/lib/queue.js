@@ -101,8 +101,8 @@ async function eligibleCandidates(userId, now) {
     where: {
       assignedToId: userId,
       OR: [
-        { status: LEAD_STATUS.ASSIGNED },
-        { status: LEAD_STATUS.SCHEDULED, followUpAt: { lte: now } },
+        { status: LEAD_STATUS.ASSIGNED, lastLeadStatus: null },
+        { status: LEAD_STATUS.SCHEDULED, followUpAt: { lte: now }, lastLeadStatus: null },
         { followupAcceptedAt: { not: null } }
       ],
     },
@@ -130,14 +130,14 @@ export async function queueSummary(userId) {
 
   const [user, pending, scheduled, dueNow, worked12h, next, achievedTarget, unansweredToday] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { dailyTarget: true } }),
-    prisma.lead.count({ where: { assignedToId: userId, status: LEAD_STATUS.ASSIGNED } }),
-    prisma.lead.count({ where: { assignedToId: userId, status: LEAD_STATUS.SCHEDULED } }),
-    prisma.lead.count({ where: { assignedToId: userId, status: LEAD_STATUS.SCHEDULED, followUpAt: { lte: now } } }),
+    prisma.lead.count({ where: { assignedToId: userId, status: LEAD_STATUS.ASSIGNED, lastLeadStatus: null } }),
+    prisma.lead.count({ where: { assignedToId: userId, status: LEAD_STATUS.SCHEDULED, lastLeadStatus: null } }),
+    prisma.lead.count({ where: { assignedToId: userId, status: LEAD_STATUS.SCHEDULED, followUpAt: { lte: now }, lastLeadStatus: null } }),
     prisma.disposition.count({
       where: { userId, submittedAt: { gte: new Date(now.getTime() - 12 * 3600000) } },
     }),
     prisma.lead.findFirst({
-      where: { assignedToId: userId, status: LEAD_STATUS.SCHEDULED, followUpAt: { gt: now } },
+      where: { assignedToId: userId, status: LEAD_STATUS.SCHEDULED, followUpAt: { gt: now }, lastLeadStatus: null },
       orderBy: { followUpAt: 'asc' },
       select: { followUpAt: true },
     }),

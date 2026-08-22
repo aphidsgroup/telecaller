@@ -224,7 +224,7 @@ export default function DispositionForm({
           <label className="label">Lead status (optional if unanswered)</label>
           <ChipGroup
             options={LEAD_STATUS_CATEGORY.filter(
-              (s) => !['SITE_VISIT_DONE', 'INTERESTED', 'NEGOTIATING', 'QUOTATION_SENT', 'DUPLICATE'].includes(s.value)
+              (s) => !['SITE_VISIT_DONE', 'INTERESTED', 'NEGOTIATING', 'QUOTATION_SENT', 'DUPLICATE', 'CONVERTED'].includes(s.value)
             )}
             value={form.leadStatus}
             onChange={(v) => set({ leadStatus: v })}

@@ -46,6 +46,11 @@ export default function CallerWorkspace({ user }) {
     setCallClickedAt(data.lead?.callClicked ? data.lead.callClickedAt : null);
     eventIdRef.current = newClientEventId();
     if (cache) cacheCurrentLead(data.lead ? { lead: data.lead, queue: data.queue, config: data.config } : null);
+
+    // Scroll to top to ensure caller sees the phone number immediately
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, []);
 
   const load = useCallback(async () => {
