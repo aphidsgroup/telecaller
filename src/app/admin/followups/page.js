@@ -10,8 +10,8 @@ export const metadata = { title: 'Follow-ups' };
 export default async function AdminFollowupsPage({ searchParams }) {
   const user = await requireAdmin();
   const params = (await searchParams) || {};
-  const q = params.q?.trim();
-  const companyIdFilter = params.companyId || user.companyId;
+  const q = params.q?.trim() || '';
+  const companyIdFilter = params.companyId || user.companyId || '';
   const startingFilter = params.starting || '';
 
   const [companies, systemUsers] = await Promise.all([
@@ -113,25 +113,55 @@ export default async function AdminFollowupsPage({ searchParams }) {
         </div>
       </div>
 
-      <form className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap gap-3">
+      {/* Search bar — separate form, preserves current filter values */}
+      <form method="GET" className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex gap-3">
+        <input type="hidden" name="companyId" value={companyIdFilter} />
+        <input type="hidden" name="starting" value={startingFilter} />
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder="Search by name or phone..."
+            className="input pl-9 text-sm w-full"
+          />
+        </div>
+        <button type="submit" className="btn-primary px-4 rounded-xl text-sm">Search</button>
+      </form>
+
+      {/* Filters — auto-apply on change, preserves search query */}
+      <form method="GET" className="bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center">
+        <input type="hidden" name="q" value={q} />
+        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Filter by:</span>
         {!user.companyId && (
-          <select name="companyId" defaultValue={companyIdFilter || ''} className="input text-sm">
+          <select
+            name="companyId"
+            defaultValue={companyIdFilter}
+            onChange="this.form.submit()"
+            className="input text-sm py-2"
+          >
             <option value="">All Companies</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         )}
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-          <input type="text" name="q" defaultValue={q} placeholder="Search name or phone..." className="input pl-9 text-sm" />
-        </div>
-        <select name="starting" defaultValue={startingFilter || ''} className="input text-sm w-full md:w-auto md:min-w-[150px]">
+        <select
+          name="starting"
+          defaultValue={startingFilter}
+          onChange="this.form.submit()"
+          className="input text-sm py-2"
+        >
           <option value="">All Starting Times</option>
-          <option value="Immediately">Immediately</option>
-          <option value="Within 1 month">Within 1 month</option>
-          <option value="Within 3 months">Within 3 months</option>
-          <option value="More than 3 months">More than 3 months</option>
+          <option value="Immediately">🔴 Immediately</option>
+          <option value="Within 1 month">🟠 Within 1 month</option>
+          <option value="Within 3 months">🟡 Within 3 months</option>
+          <option value="More than 3 months">🟢 More than 3 months</option>
         </select>
-        <button type="submit" className="btn-primary px-4 rounded-xl text-sm">Search</button>
+        {(companyIdFilter || startingFilter) && (
+          <a href="/admin/followups" className="text-xs font-bold text-slate-400 hover:text-slate-600 underline">
+            Clear filters
+          </a>
+        )}
       </form>
 
       {serializedLeads.length === 0 ? (
