@@ -25,7 +25,7 @@ export const POST = route(async (req) => {
         name: 'Unknown',
         phone: raw,
         phoneKey: key,
-        status: LEAD_STATUS.NEW,
+        status: LEAD_STATUS.UNASSIGNED,
         source: 'Bulk Add',
         companyId: companyId || null,
         history: {
