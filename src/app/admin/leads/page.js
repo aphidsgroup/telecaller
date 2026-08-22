@@ -58,7 +58,10 @@ export default async function LeadsPage({ searchParams }) {
   const [leads, total, systemUsers, sources, projects, cities, companies] = await Promise.all([
     prisma.lead.findMany({
       where: freshWhere,
-      orderBy: [{ createdAt: 'desc' }],
+      orderBy: [
+        { status: 'desc' },
+        { createdAt: 'desc' }
+      ],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       include: { 
