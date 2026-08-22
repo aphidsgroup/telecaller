@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { requireManager } from '@/lib/auth';
 import { Users, Search } from 'lucide-react';
 import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
+import LeadSearchBox from '@/components/admin/LeadSearchBox';
 import { DEAD_LEAD_STATUSES } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,7 @@ export default async function ManagerLeadsPage({ searchParams }) {
   ]);
 
   const where = {
-    NOT: { lastLeadStatus: { in: DEAD_LEAD_STATUSES } },
+    lastLeadStatus: null,
   };
   if (companyIdFilter) where.companyId = companyIdFilter;
   if (q) {
@@ -63,21 +64,7 @@ export default async function ManagerLeadsPage({ searchParams }) {
         </div>
       </div>
 
-      <form className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-3">
-        {!user.companyId && (
-          <select name="companyId" defaultValue={companyIdFilter || ''} className="input text-sm">
-            <option value="">All Companies</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        )}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
-            <input type="text" name="q" defaultValue={q} placeholder="Search name or phone..." className="input pl-9 text-sm" />
-          </div>
-          <button type="submit" className="btn-primary px-4 rounded-xl text-sm">Search</button>
-        </div>
-      </form>
+      <LeadSearchBox params={params} companies={companies} hideCompanyFilter={!!user.companyId} />
 
       <div className="space-y-3 mt-4">
         {leads.length === 0 ? (

@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 import { fail, ok, readJson, route } from '@/lib/api';
 import { LEAD_STATUS } from '@/lib/constants';
-import { normalisePhone } from '@/lib/format';
+import { normalisePhone, isValidPhone } from '@/lib/format';
 
 export const POST = route(async (req) => {
   const admin = await requireAdmin();
@@ -46,8 +46,8 @@ export const POST = route(async (req) => {
 
   let count = 0;
   for (const raw of numbers) {
+    if (!isValidPhone(raw)) continue;
     const key = normalisePhone(raw);
-    if (!key) continue;
 
     // Check if it already exists
     const exists = await prisma.lead.findFirst({ where: { phoneKey: key } });

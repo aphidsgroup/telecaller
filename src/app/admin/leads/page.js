@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
-import LeadFilters from '@/components/admin/LeadFilters';
+import LeadSearchBox from '@/components/admin/LeadSearchBox';
 import BulkLeadAdder from '@/components/admin/BulkLeadAdder';
 import LeadTable from '@/components/admin/LeadTable';
 import { ROLE, DEAD_LEAD_STATUSES } from '@/lib/constants';
@@ -121,12 +121,8 @@ export default async function LeadsPage({ searchParams }) {
         </div>
       </div>
 
-      <LeadFilters
+      <LeadSearchBox
         params={params}
-        telecallers={telecallers}
-        sources={sources.map((s) => s.source).filter(Boolean)}
-        projects={projects.map((p) => p.project).filter(Boolean)}
-        cities={cities.map((c) => c.city).filter(Boolean)}
         companies={companies}
       />
 
