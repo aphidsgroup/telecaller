@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { requireManager } from '@/lib/auth';
 import { Building2, Search, Phone, User, Calendar, MapPin, Play, Clock, CheckCircle, Activity, FileSpreadsheet } from 'lucide-react';
 import ManagerLiveSearch from '@/components/manager/ManagerLiveSearch';
 import ManagerSiteVisitsPipeline from '@/components/manager/ManagerSiteVisitsPipeline';
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Manager Dashboard' };
 
 export default async function ManagerDashboard({ searchParams }) {
-  const user = await getCurrentUser();
+  const user = await requireManager();
   const params = (await searchParams) || {};
   const selectedCompanyId = params.companyId || '';
   
@@ -115,7 +115,7 @@ export default async function ManagerDashboard({ searchParams }) {
 
   const extractUniqueLeads = (disps, limit) => {
     const map = new Map();
-    disps.forEach(d => { if (!map.has(d.lead.id)) map.set(d.lead.id, d.lead); });
+    disps.forEach(d => { if (d.lead && !map.has(d.lead.id)) map.set(d.lead.id, d.lead); });
     return Array.from(map.values()).slice(0, limit);
   };
 
