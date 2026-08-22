@@ -89,8 +89,15 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
     }
   }
 
+  const starting = lead.extraData?.Starting;
+  let bgClass = "bg-white border-slate-100";
+  if (starting === 'Immediately') bgClass = "bg-red-50 border-red-100";
+  else if (starting === 'Within 1 month') bgClass = "bg-orange-50 border-orange-100";
+  else if (starting === 'Within 3 months') bgClass = "bg-yellow-50 border-yellow-100";
+  else if (starting === 'More than 3 months') bgClass = "bg-green-50 border-green-100";
+
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col gap-4">
+    <div className={`${bgClass} rounded-2xl p-5 shadow-sm border flex flex-col gap-4`}>
       {/* Follow-up Status Badge */}
       {lead.followupRequestedAt && (
         <div className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between ${
@@ -140,7 +147,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
 
       {/* Client Details from extraData */}
       {(lead.city || (lead.extraData && Object.keys(lead.extraData).length > 0)) && (
-        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+        <div className="bg-white/50 rounded-xl p-3 border border-white/60">
           <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Client Details</h4>
           <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-xs">
             {lead.city && (
@@ -161,7 +168,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
 
       {/* Lead Journey Timeline */}
       {lead.dispositions && lead.dispositions.length > 0 && (
-        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+        <div className="bg-white/50 p-3 rounded-xl border border-white/60">
           <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-3">Lead Journey</h4>
           <div className="space-y-3 relative before:absolute before:inset-0 before:ml-[5px] before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
             {lead.dispositions.map((disp, idx) => (
@@ -188,7 +195,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
       )}
 
       {/* Actions: Assign + Status */}
-      <div className="pt-3 border-t border-slate-100">
+      <div className="pt-3 border-t border-slate-900/5">
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Assign To</span>
@@ -197,7 +204,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
                 disabled={assigning}
                 value={selectedAssignee}
                 onChange={(e) => handleAssign(e.target.value)}
-                className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
+                className="w-full appearance-none bg-white/60 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
               >
                 <option value="">-- Unassigned --</option>
                 <optgroup label="Site Engineers">
@@ -222,7 +229,7 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
                 disabled={updating}
                 value={selectedStatus}
                 onChange={(e) => handleStatusChange(e.target.value)}
-                className="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
+                className="w-full appearance-none bg-white/60 border border-slate-200 text-slate-700 text-xs font-bold rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
               >
                 <option value="">-- Select --</option>
                 {LEAD_STATUS_CATEGORY.map(s => (
