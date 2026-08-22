@@ -133,9 +133,6 @@ export default function StatusBar({ user, online, pending, queue, onSync }) {
                 <span className="text-emerald-400">
                   <span className="font-black">{queue.achievedTarget}</span>/{queue.dailyTarget} Connected
                 </span>
-                <span className="text-slate-500 font-normal">
-                  ({queue.unansweredToday} Unanswered)
-                </span>
               </span>
             </>
           ) : null}
