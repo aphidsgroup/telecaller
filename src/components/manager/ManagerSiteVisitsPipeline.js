@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin, ChevronDown } from 'lucide-react';
 import { leadStatusCategoryLabel } from '@/lib/constants';
 import { formatDateTime } from '@/lib/format';
@@ -8,6 +8,10 @@ import { formatDateTime } from '@/lib/format';
 export default function ManagerSiteVisitsPipeline({ initialLeads, users }) {
   const [leads, setLeads] = useState(initialLeads);
   const [assigning, setAssigning] = useState(null);
+
+  useEffect(() => {
+    setLeads(initialLeads);
+  }, [initialLeads]);
 
   async function handleAssign(leadId, userId) {
     setAssigning(leadId);

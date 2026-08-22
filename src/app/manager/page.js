@@ -214,7 +214,11 @@ export default async function ManagerDashboard({ searchParams }) {
         </div>
       )}
 
-      <ManagerSiteVisitsPipeline initialLeads={serializedSiteVisitLeads} users={users} />
+      <ManagerSiteVisitsPipeline 
+        key={`pipeline-${effectiveCompanyId || 'all'}`} 
+        initialLeads={serializedSiteVisitLeads} 
+        users={users} 
+      />
 
       {serializedContactedByEngineer.length > 0 && (
         <div className="mt-8">
