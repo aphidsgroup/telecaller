@@ -68,8 +68,7 @@ export async function recordWhatsAppClick({ userId, leadId }) {
 
 function validateDisposition({ callCategory, leadStatus }) {
   if (callCategory && !CALL_CATEGORY_VALUES.includes(callCategory)) throw new HttpError(400, 'Pick a valid call category');
-  if (!leadStatus) throw new HttpError(400, 'Pick a valid lead status');
-  if (!LEAD_STATUS_VALUES.includes(leadStatus)) throw new HttpError(400, 'Pick a valid lead status');
+  if (leadStatus && !LEAD_STATUS_VALUES.includes(leadStatus)) throw new HttpError(400, 'Pick a valid lead status');
 }
 
 /**
@@ -184,28 +183,30 @@ export async function submitDisposition({
     clientUpdate.extraData = newExtra;
   }
 
+  const updateData = {
+    status: close ? LEAD_STATUS.CLOSED : LEAD_STATUS.SCHEDULED,
+    followUpAt,
+    followUpNotifiedAt: null,
+    closedAt: close ? submittedAt : null,
+    lastContactedAt: submittedAt,
+    lastCallCategory: callCategory,
+    ...clientUpdate,
+    inProgressAt: null,
+    followupRequestedAt: null,
+    followupAcceptedAt: null,
+    followupDeclinedAt: null,
+    followupMessage: null,
+    flaggedForReview: false,
+    flagReason: null,
+    flaggedAt: null,
+  };
+  if (leadStatus) {
+    updateData.lastLeadStatus = leadStatus;
+  }
+
   await prisma.lead.update({
     where: { id: leadId },
-    data: {
-      status: close ? LEAD_STATUS.CLOSED : LEAD_STATUS.SCHEDULED,
-      followUpAt,
-      followUpNotifiedAt: null,
-      closedAt: close ? submittedAt : null,
-      lastContactedAt: submittedAt,
-      lastCallCategory: callCategory,
-      lastLeadStatus: leadStatus,
-      inProgressAt: null,
-      // clear hot transfer flags
-      followupRequestedAt: null,
-      followupAcceptedAt: null,
-      followupDeclinedAt: null,
-      followupMessage: null,
-      // a fresh disposition supersedes any stale-lead flag
-      flaggedForReview: false,
-      flagReason: null,
-      flaggedAt: null,
-      ...clientUpdate,
-    },
+    data: updateData
   });
 
   await logEvent(null, {
@@ -472,3 +473,4 @@ export async function notifyDueFollowUps() {
   }
   return { notified: due.length };
 }
+
