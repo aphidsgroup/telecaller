@@ -160,8 +160,8 @@ export default function CallerWorkspace({ user }) {
       setToast({ kind: 'warn', text: 'Press the Call button before updating the status.' });
       return;
     }
-    if (!form.callCategory) {
-      setToast({ kind: 'warn', text: 'Please select what happened on the call.' });
+    if (!form.callCategory && !form.leadStatus) {
+      setToast({ kind: 'warn', text: 'Please select what happened on the call OR a lead status.' });
       return;
     }
 

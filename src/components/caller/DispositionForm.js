@@ -221,9 +221,11 @@ export default function DispositionForm({
 
         {/* Lead status */}
         <div>
-          <label className="label">Lead status</label>
+          <label className="label">Lead status (optional if unanswered)</label>
           <ChipGroup
-            options={LEAD_STATUS_CATEGORY}
+            options={LEAD_STATUS_CATEGORY.filter(
+              (s) => !['SITE_VISIT_DONE', 'INTERESTED', 'NEGOTIATING', 'QUOTATION_SENT', 'DUPLICATE'].includes(s.value)
+            )}
             value={form.leadStatus}
             onChange={(v) => set({ leadStatus: v })}
             disabled={!unlocked || submitting}
