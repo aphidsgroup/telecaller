@@ -12,6 +12,7 @@ export default async function AdminFollowupsPage({ searchParams }) {
   const params = (await searchParams) || {};
   const q = params.q?.trim();
   const companyIdFilter = params.companyId || user.companyId;
+  const startingFilter = params.starting || '';
 
   const [companies, systemUsers] = await Promise.all([
     prisma.company.findMany({
@@ -45,7 +46,7 @@ export default async function AdminFollowupsPage({ searchParams }) {
   const leads = await prisma.lead.findMany({
     where,
     orderBy: { updatedAt: 'desc' },
-    take: 100,
+    take: 250,
     select: {
       id: true, name: true, phone: true, status: true, lastLeadStatus: true, updatedAt: true, assignedToId: true,
       city: true, extraData: true,
@@ -77,10 +78,29 @@ export default async function AdminFollowupsPage({ searchParams }) {
 
   const serializedLeads = leads.map(serializeLead);
 
-  const telecallerLeads = serializedLeads.filter(l => {
+  let telecallerLeads = serializedLeads.filter(l => {
     const lastDisp = l.dispositions && l.dispositions[l.dispositions.length - 1];
     return !lastDisp || lastDisp.user?.role === 'TELECALLER';
   });
+
+  if (startingFilter) {
+    telecallerLeads = telecallerLeads.filter(l => l.extraData && l.extraData.Starting === startingFilter);
+  }
+
+  const STARTING_ORDER = {
+    'Immediately': 1,
+    'Within 1 month': 2,
+    'Within 3 months': 3,
+    'More than 3 months': 4,
+  };
+
+  telecallerLeads.sort((a, b) => {
+    const aVal = (a.extraData && STARTING_ORDER[a.extraData.Starting]) ? STARTING_ORDER[a.extraData.Starting] : 99;
+    const bVal = (b.extraData && STARTING_ORDER[b.extraData.Starting]) ? STARTING_ORDER[b.extraData.Starting] : 99;
+    if (aVal !== bVal) return aVal - bVal;
+    return new Date(b.updatedAt) - new Date(a.updatedAt);
+  });
+
   const engineerLeads = serializedLeads.filter(l => {
     const lastDisp = l.dispositions && l.dispositions[l.dispositions.length - 1];
     return lastDisp && lastDisp.user?.role === 'SITE_ENGINEER';
@@ -109,6 +129,13 @@ export default async function AdminFollowupsPage({ searchParams }) {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
           <input type="text" name="q" defaultValue={q} placeholder="Search name or phone..." className="input pl-9 text-sm" />
         </div>
+        <select name="starting" defaultValue={startingFilter || ''} className="input text-sm w-full md:w-auto md:min-w-[150px]">
+          <option value="">All Starting Times</option>
+          <option value="Immediately">Immediately</option>
+          <option value="Within 1 month">Within 1 month</option>
+          <option value="Within 3 months">Within 3 months</option>
+          <option value="More than 3 months">More than 3 months</option>
+        </select>
         <button type="submit" className="btn-primary px-4 rounded-xl text-sm">Search</button>
       </form>
 
@@ -168,3 +195,4 @@ export default async function AdminFollowupsPage({ searchParams }) {
     </div>
   );
 }
+

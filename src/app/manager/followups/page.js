@@ -12,6 +12,7 @@ export default async function ManagerFollowupsPage({ searchParams }) {
   const params = (await searchParams) || {};
   const q = params.q?.trim();
   const companyIdFilter = params.companyId || user.companyId;
+  const startingFilter = params.starting || '';
 
   const [companies, systemUsers] = await Promise.all([
     prisma.company.findMany({
@@ -45,7 +46,7 @@ export default async function ManagerFollowupsPage({ searchParams }) {
   const leads = await prisma.lead.findMany({
     where,
     orderBy: { updatedAt: 'desc' },
-    take: 100,
+    take: 250,
     select: {
       id: true, name: true, phone: true, status: true, lastLeadStatus: true, updatedAt: true, assignedToId: true,
       city: true, extraData: true,
@@ -77,10 +78,29 @@ export default async function ManagerFollowupsPage({ searchParams }) {
 
   const serializedLeads = leads.map(serializeLead);
 
-  const telecallerLeads = serializedLeads.filter(l => {
+  let telecallerLeads = serializedLeads.filter(l => {
     const lastDisp = l.dispositions && l.dispositions[l.dispositions.length - 1];
     return !lastDisp || lastDisp.user?.role === 'TELECALLER';
   });
+
+  if (startingFilter) {
+    telecallerLeads = telecallerLeads.filter(l => l.extraData && l.extraData.Starting === startingFilter);
+  }
+
+  const STARTING_ORDER = {
+    'Immediately': 1,
+    'Within 1 month': 2,
+    'Within 3 months': 3,
+    'More than 3 months': 4,
+  };
+
+  telecallerLeads.sort((a, b) => {
+    const aVal = (a.extraData && STARTING_ORDER[a.extraData.Starting]) ? STARTING_ORDER[a.extraData.Starting] : 99;
+    const bVal = (b.extraData && STARTING_ORDER[b.extraData.Starting]) ? STARTING_ORDER[b.extraData.Starting] : 99;
+    if (aVal !== bVal) return aVal - bVal;
+    return new Date(b.updatedAt) - new Date(a.updatedAt);
+  });
+
   const engineerLeads = serializedLeads.filter(l => {
     const lastDisp = l.dispositions && l.dispositions[l.dispositions.length - 1];
     return lastDisp && lastDisp.user?.role === 'SITE_ENGINEER';
@@ -146,3 +166,4 @@ export default async function ManagerFollowupsPage({ searchParams }) {
     </div>
   );
 }
+
