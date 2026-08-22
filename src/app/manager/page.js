@@ -16,15 +16,19 @@ export default async function ManagerDashboard({ searchParams }) {
     const selectedCompanyId = Array.isArray(params.companyId) ? params.companyId[0] : params.companyId || '';
     
     const effectiveCompanyId = user.companyId || selectedCompanyId || undefined;
-  const companyFilter = effectiveCompanyId ? { companyId: effectiveCompanyId } : undefined;
+    
+    // Filter for Lead, User, Disposition models
+    const companyFilter = effectiveCompanyId ? { companyId: effectiveCompanyId } : undefined;
+    // Filter for the Company model itself
+    const companyQueryFilter = effectiveCompanyId ? { id: effectiveCompanyId } : undefined;
 
-  const [allCompanies, companies] = await Promise.all([
-    !user.companyId ? prisma.company.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
-    prisma.company.findMany({
-      where: companyFilter,
-      orderBy: { name: 'asc' },
-    })
-  ]);
+    const [allCompanies, companies] = await Promise.all([
+      !user.companyId ? prisma.company.findMany({ orderBy: { name: 'asc' } }) : Promise.resolve([]),
+      prisma.company.findMany({
+        where: companyQueryFilter,
+        orderBy: { name: 'asc' },
+      })
+    ]);
 
   const stats = await Promise.all(
     companies.map(async (company) => {
