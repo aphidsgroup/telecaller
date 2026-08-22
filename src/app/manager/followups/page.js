@@ -4,6 +4,8 @@ import { Clock, Search } from 'lucide-react';
 import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
 import { DEAD_LEAD_STATUSES } from '@/lib/constants';
 
+import AutoSubmitForm from '@/components/shared/AutoSubmitForm';
+
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Company Follow-ups' };
 
@@ -131,14 +133,13 @@ export default async function ManagerFollowupsPage({ searchParams }) {
       </form>
 
       {/* Filters — auto-apply on change, preserves search query */}
-      <form method="GET" className="bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center">
+      <AutoSubmitForm className="bg-white px-4 py-3 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap gap-3 items-center">
         <input type="hidden" name="q" value={q} />
         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Filter by:</span>
         {!user.companyId && (
           <select
             name="companyId"
             defaultValue={companyIdFilter}
-            onChange="this.form.submit()"
             className="input text-sm py-2"
           >
             <option value="">All Companies</option>
@@ -148,7 +149,6 @@ export default async function ManagerFollowupsPage({ searchParams }) {
         <select
           name="starting"
           defaultValue={startingFilter}
-          onChange="this.form.submit()"
           className="input text-sm py-2"
         >
           <option value="">All Starting Times</option>
@@ -162,7 +162,7 @@ export default async function ManagerFollowupsPage({ searchParams }) {
             Clear filters
           </a>
         )}
-      </form>
+      </AutoSubmitForm>
 
       {serializedLeads.length === 0 ? (
         <div className="text-center p-8 text-slate-400">No active follow-ups found.</div>
