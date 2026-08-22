@@ -61,3 +61,12 @@ export const PATCH = route(async (req, ctx) => {
   });
   return ok({ lead });
 });
+
+export const DELETE = route(async (_req, ctx) => {
+  await requireAdmin();
+  const { id } = await ctx.params;
+  const existing = await prisma.lead.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) return fail(404, 'Lead not found');
+  await prisma.lead.delete({ where: { id } });
+  return ok({ deleted: true });
+});

@@ -13,11 +13,27 @@ export default function LeadTable({ leads, telecallers, tz }) {
   const [target, setTarget] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
 
   const allSelected = leads.length > 0 && selected.length === leads.length;
 
   function toggle(id) {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  async function deleteLead(id, name) {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/admin/leads/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'Delete failed');
+      router.refresh();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function bulkAssign() {
@@ -89,6 +105,7 @@ export default function LeadTable({ leads, telecallers, tz }) {
               <th className="th">Uploaded</th>
               <th className="th">Next follow-up</th>
               <th className="th">Attempts</th>
+              <th className="th">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -122,55 +139,53 @@ export default function LeadTable({ leads, telecallers, tz }) {
                 </td>
                 <td className="td">{lead.assignedTo?.name || <span className="text-slate-400">Pool</span>}</td>
                 <td className="td">
-                  {lead.lastLeadStatus ? (
-                    <div>
-                      <select
-                        className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded px-1 py-0.5 hover:bg-slate-100 cursor-pointer w-full max-w-[200px] truncate mb-2"
-                        value={lead.lastLeadStatus}
-                        onChange={async (e) => {
-                          const newStatus = e.target.value;
-                          const res = await fetch(`/api/admin/leads/${lead.id}`, {
-                            method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ leadStatus: newStatus, notes: 'Status updated from table' })
-                          });
-                          if (res.ok) router.refresh();
-                        }}
-                      >
-                        {LEAD_STATUS_CATEGORY.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                      </select>
+                  <div>
+                    <select
+                      className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded px-1 py-0.5 hover:bg-slate-100 cursor-pointer w-full max-w-[200px] truncate mb-2"
+                      value={lead.lastLeadStatus || ''}
+                      onChange={async (e) => {
+                        const newStatus = e.target.value;
+                        if (!newStatus) return;
+                        const res = await fetch(`/api/admin/leads/${lead.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ leadStatus: newStatus, notes: 'Status updated by admin' })
+                        });
+                        if (res.ok) router.refresh();
+                      }}
+                    >
+                      <option value="">— Set status —</option>
+                      {LEAD_STATUS_CATEGORY.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
 
-                      {lead.dispositions && lead.dispositions.length > 0 && (
-                        <div className="space-y-2 relative before:absolute before:inset-0 before:ml-[3px] before:-translate-x-px before:h-full before:w-0.5 before:bg-slate-200">
-                          {lead.dispositions.map((disp, idx) => (
-                            <div key={idx} className="relative flex items-start gap-2 max-w-[200px]">
-                              <div className="w-1.5 h-1.5 rounded-full bg-brand-400 mt-1 shrink-0 relative z-10 shadow-sm" />
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[10px] font-bold text-slate-700 leading-tight">
-                                  {leadStatusCategoryLabel(disp.leadStatus)}
-                                </div>
-                                <div className="text-[9px] text-slate-500 mt-0.5 leading-tight">
-                                  {formatDateTime(disp.submittedAt, tz)} • {disp.user?.name} {disp.user?.role === 'SITE_ENGINEER' ? '(Eng)' : ''}
-                                </div>
-                                {disp.notes && (
-                                  <div className="text-[9px] text-slate-600 mt-1 italic border-l-2 border-brand-200 pl-1.5 line-clamp-2" title={disp.notes}>
-                                    &quot;{disp.notes}&quot;
-                                  </div>
-                                )}
-                                {disp.audioBase64 && (
-                                  <div className="mt-1">
-                                    <audio src={disp.audioBase64} controls className="h-5 w-full" />
-                                  </div>
-                                )}
+                    {lead.dispositions && lead.dispositions.length > 0 && (
+                      <div className="space-y-2 relative before:absolute before:inset-0 before:ml-[3px] before:-translate-x-px before:h-full before:w-0.5 before:bg-slate-200">
+                        {lead.dispositions.map((disp, idx) => (
+                          <div key={idx} className="relative flex items-start gap-2 max-w-[200px]">
+                            <div className="w-1.5 h-1.5 rounded-full bg-brand-400 mt-1 shrink-0 relative z-10 shadow-sm" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[10px] font-bold text-slate-700 leading-tight">
+                                {leadStatusCategoryLabel(disp.leadStatus)}
                               </div>
+                              <div className="text-[9px] text-slate-500 mt-0.5 leading-tight">
+                                {formatDateTime(disp.submittedAt, tz)} &bull; {disp.user?.name} {disp.user?.role === 'SITE_ENGINEER' ? '(Eng)' : ''}
+                              </div>
+                              {disp.notes && (
+                                <div className="text-[9px] text-slate-600 mt-1 italic border-l-2 border-brand-200 pl-1.5 line-clamp-2" title={disp.notes}>
+                                  &quot;{disp.notes}&quot;
+                                </div>
+                              )}
+                              {disp.audioBase64 && (
+                                <div className="mt-1">
+                                  <audio src={disp.audioBase64} controls className="h-5 w-full" />
+                                </div>
+                              )}
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-slate-400">Not called yet</span>
-                  )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td className="td text-xs text-slate-500">{formatDateTime(lead.createdAt, tz)}</td>
                 <td className="td text-xs">
@@ -184,6 +199,15 @@ export default function LeadTable({ leads, telecallers, tz }) {
                   )}
                 </td>
                 <td className="td text-center">{lead.attemptCount}</td>
+                <td className="td text-center">
+                  <button
+                    onClick={() => deleteLead(lead.id, lead.name)}
+                    disabled={deletingId === lead.id}
+                    className="text-[11px] font-semibold text-rose-600 hover:text-white hover:bg-rose-600 border border-rose-200 hover:border-rose-600 px-2 py-1 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {deletingId === lead.id ? '...' : 'Delete'}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
