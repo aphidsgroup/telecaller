@@ -40,7 +40,7 @@ export default async function AdminLayout({ children }) {
     <div className="min-h-screen bg-slate-100">
       {/* Top header */}
       <header className="sticky top-0 z-30 bg-white border-b border-slate-200/80 shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 h-14">
+        <div className="mx-auto flex max-w-full items-center justify-between gap-4 px-4 h-14">
           {/* Logo + wordmark */}
           <div className="flex items-center gap-3 shrink-0">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/10 p-1.5">
@@ -70,7 +70,7 @@ export default async function AdminLayout({ children }) {
         </div>
 
         {/* Nav strip */}
-        <nav className="mx-auto flex max-w-7xl gap-0.5 overflow-x-auto px-2 pb-2 scrollbar-none">
+        <nav className="mx-auto flex max-w-full gap-0.5 overflow-x-auto px-2 pb-2 scrollbar-none">
           {NAV.map((item) => {
             const Icon = item.icon;
             return (
@@ -87,7 +87,7 @@ export default async function AdminLayout({ children }) {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 animate-fade-in">
+      <main className="mx-auto max-w-full px-4 py-6 animate-fade-in">
         {children}
       </main>
     </div>
