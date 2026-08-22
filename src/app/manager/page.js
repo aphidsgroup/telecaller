@@ -10,11 +10,12 @@ export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Manager Dashboard' };
 
 export default async function ManagerDashboard({ searchParams }) {
-  const user = await requireManager();
-  const params = (await searchParams) || {};
-  const selectedCompanyId = params.companyId || '';
-  
-  const effectiveCompanyId = user.companyId || selectedCompanyId || undefined;
+  try {
+    const user = await requireManager();
+    const params = (await searchParams) || {};
+    const selectedCompanyId = Array.isArray(params.companyId) ? params.companyId[0] : params.companyId || '';
+    
+    const effectiveCompanyId = user.companyId || selectedCompanyId || undefined;
   const companyFilter = effectiveCompanyId ? { companyId: effectiveCompanyId } : undefined;
 
   const [allCompanies, companies] = await Promise.all([
@@ -40,12 +41,9 @@ export default async function ManagerDashboard({ searchParams }) {
     })
   );
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
   const [siteVisitLeads, recentLeads, recentTelecallerDisps, recentEngineerDisps, users] = await Promise.all([
     prisma.lead.findMany({
-      where: { ...companyFilter, lastLeadStatus: { in: ['SITE_VISIT_DONE', 'SEND_SITE_VISIT'] } },
+      where: { ...companyFilter, lastLeadStatus: { in: ['SITE_VISIT_DONE', 'SEND_SITE_VISIT'] }, status: { not: 'CLOSED' } },
       orderBy: { updatedAt: 'desc' },
       take: 20,
       select: {
@@ -56,9 +54,9 @@ export default async function ManagerDashboard({ searchParams }) {
       }
     }),
     prisma.lead.findMany({
-      where: { ...companyFilter, status: 'UNASSIGNED', lastLeadStatus: null, createdAt: { gte: thirtyDaysAgo } },
+      where: { source: 'MANUAL', status: 'UNASSIGNED', lastContactedAt: null, ...companyFilter },
       orderBy: { createdAt: 'desc' },
-      take: 15,
+      take: 10,
       select: {
         id: true, name: true, phone: true, status: true, lastLeadStatus: true, createdAt: true, updatedAt: true, assignedToId: true,
         company: { select: { name: true } },
@@ -66,12 +64,8 @@ export default async function ManagerDashboard({ searchParams }) {
         dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
       }
     }),
-    prisma.leadEvent.findMany({
-      where: {
-        type: 'DISPOSITION',
-        user: { role: 'TELECALLER' },
-        ...(effectiveCompanyId && { lead: { companyId: effectiveCompanyId } })
-      },
+    prisma.disposition.findMany({
+      where: { user: { role: 'TELECALLER' }, lead: { ...companyFilter } },
       orderBy: { submittedAt: 'desc' },
       take: 50,
       select: {
@@ -86,12 +80,8 @@ export default async function ManagerDashboard({ searchParams }) {
         }
       }
     }),
-    prisma.leadEvent.findMany({
-      where: {
-        type: 'DISPOSITION',
-        user: { role: 'SITE_ENGINEER' },
-        ...(effectiveCompanyId && { lead: { companyId: effectiveCompanyId } })
-      },
+    prisma.disposition.findMany({
+      where: { user: { role: 'SITE_ENGINEER' }, lead: { ...companyFilter } },
       orderBy: { submittedAt: 'desc' },
       take: 50,
       select: {
@@ -262,4 +252,19 @@ export default async function ManagerDashboard({ searchParams }) {
       )}
     </div>
   );
+  } catch (err) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto mt-12 bg-red-50 border border-red-200 rounded-2xl text-red-900">
+        <h1 className="text-2xl font-bold mb-2 flex items-center gap-2">
+          <span className="text-3xl">⚠️</span> Dashboard Error
+        </h1>
+        <p className="mb-4">An error occurred while loading the manager dashboard:</p>
+        <pre className="p-4 bg-white/60 rounded-xl overflow-x-auto text-xs font-mono whitespace-pre-wrap border border-red-100">
+          {err.message}
+          {'\n\n'}
+          {err.stack}
+        </pre>
+      </div>
+    );
+  }
 }
