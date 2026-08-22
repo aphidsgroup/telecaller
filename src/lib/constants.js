@@ -61,10 +61,15 @@ export const LEAD_STATUS_CATEGORY = [
   { value: 'CONVERTED', label: 'Converted / Booked' },
   { value: 'WRONG_NUMBER', label: 'Wrong Number / Invalid' },
   { value: 'DUPLICATE', label: 'Duplicate Lead' },
+  { value: 'ORDER_GIVEN_TO_OTHER_COMPANY', label: 'Order Given to Other Company' },
 ];
 
-// Reaching one of these ends the lead - no follow-up is scheduled.
-export const TERMINAL_LEAD_STATUSES = ['NOT_INTERESTED', 'CONVERTED', 'WRONG_NUMBER', 'DUPLICATE'];
+// Reaching one of these ends the lead — no follow-up is scheduled.
+export const TERMINAL_LEAD_STATUSES = ['NOT_INTERESTED', 'CONVERTED', 'WRONG_NUMBER', 'DUPLICATE', 'ORDER_GIVEN_TO_OTHER_COMPANY'];
+
+// These statuses move the lead to the Dead Leads bin — hidden from main lists.
+export const DEAD_LEAD_STATUSES = ['NOT_INTERESTED', 'WRONG_NUMBER', 'DUPLICATE', 'ORDER_GIVEN_TO_OTHER_COMPANY'];
+
 
 export const labelOf = (list, value) => (list.find((x) => x.value === value) || {}).label || value || '-';
 export const callCategoryLabel = (v) => labelOf(CALL_CATEGORY, v);

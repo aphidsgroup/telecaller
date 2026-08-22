@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import LeadFilters from '@/components/admin/LeadFilters';
 import BulkLeadAdder from '@/components/admin/BulkLeadAdder';
 import LeadTable from '@/components/admin/LeadTable';
-import { ROLE } from '@/lib/constants';
+import { ROLE, DEAD_LEAD_STATUSES } from '@/lib/constants';
 import { normalisePhone } from '@/lib/format';
 import { getSettings, str } from '@/lib/settings';
 
@@ -52,8 +52,10 @@ export default async function LeadsPage({ searchParams }) {
   const settings = await getSettings();
   const tz = str(settings, 'company.timezone');
 
-  // Only show fresh leads — not yet contacted (no disposition yet)
-  const freshWhere = { ...where, lastLeadStatus: null };
+  // Only show fresh leads — not yet contacted AND not dead
+  const freshWhere = { ...where, lastLeadStatus: null, lastLeadStatus_not_in: undefined };
+  // Explicitly exclude dead leads (in case any slipped through with a dead status)
+  freshWhere.NOT = { lastLeadStatus: { in: DEAD_LEAD_STATUSES } };
 
   const [leads, total, systemUsers, sources, projects, cities, companies] = await Promise.all([
     prisma.lead.findMany({

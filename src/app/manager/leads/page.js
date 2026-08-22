@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { requireManager } from '@/lib/auth';
 import { Users, Search } from 'lucide-react';
 import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
+import { DEAD_LEAD_STATUSES } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Company Leads' };
@@ -28,7 +29,9 @@ export default async function ManagerLeadsPage({ searchParams }) {
     })
   ]);
 
-  const where = {};
+  const where = {
+    NOT: { lastLeadStatus: { in: DEAD_LEAD_STATUSES } },
+  };
   if (companyIdFilter) where.companyId = companyIdFilter;
   if (q) {
     where.OR = [
