@@ -28,12 +28,6 @@ export const POST = route(async (req) => {
         status: LEAD_STATUS.UNASSIGNED,
         source: 'Bulk Add',
         companyId: companyId || null,
-        history: {
-          create: {
-            type: 'IMPORTED',
-            note: 'Added via bulk paste',
-          },
-        },
       },
     });
     count++;

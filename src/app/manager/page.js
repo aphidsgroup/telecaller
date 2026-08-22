@@ -50,7 +50,7 @@ export default async function ManagerDashboard() {
       }
     }),
     prisma.lead.findMany({
-      where: { source: 'MANUAL', status: 'NEW', lastContactedAt: null, ...companyFilter },
+      where: { source: 'MANUAL', status: 'UNASSIGNED', lastContactedAt: null, ...companyFilter },
       orderBy: { createdAt: 'desc' },
       take: 10,
       select: {
