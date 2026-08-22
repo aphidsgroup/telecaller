@@ -137,8 +137,29 @@ export default function LeadTable({ leads, telecallers, tz }) {
                 <td className="td">
                   <StatusChip status={lead.status} />
                 </td>
-                <td className="td">{lead.assignedTo?.name || <span className="text-slate-400">Pool</span>}</td>
                 <td className="td">
+                  <select
+                    className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded px-1 py-0.5 hover:bg-slate-100 cursor-pointer w-full max-w-[120px] truncate"
+                    value={lead.assignedTo?.id || ''}
+                    onChange={async (e) => {
+                      const newUserId = e.target.value;
+                      const res = await fetch(`/api/admin/leads/${lead.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'assign', userId: newUserId || null })
+                      });
+                      if (res.ok) router.refresh();
+                      else alert('Failed to assign lead');
+                    }}
+                  >
+                    <option value="">Unassigned Pool</option>
+                    {telecallers.map((t) => (
+                      <option key={t.id} value={t.id} disabled={!t.isActive}>
+                        {t.name} {t.isActive ? '' : '(inactive)'}
+                      </option>
+                    ))}
+                  </select>
+                </td>
                   <div>
                     <select
                       className="text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded px-1 py-0.5 hover:bg-slate-100 cursor-pointer w-full max-w-[200px] truncate mb-2"
