@@ -90,11 +90,11 @@ export default function ManagerLeadCard({ initialLead, users, showCompany = fals
   }
 
   const starting = lead.extraData?.Starting;
-  let bgClass = "bg-white border-slate-100";
-  if (starting === 'Immediately') bgClass = "bg-red-50 border-red-100";
-  else if (starting === 'Within 1 month') bgClass = "bg-orange-50 border-orange-100";
-  else if (starting === 'Within 3 months') bgClass = "bg-yellow-50 border-yellow-100";
-  else if (starting === 'More than 3 months') bgClass = "bg-green-50 border-green-100";
+  let bgClass = "bg-white border-slate-200";
+  if (starting === 'Immediately') bgClass = "bg-red-100 border-red-200";
+  else if (starting === 'Within 1 month') bgClass = "bg-orange-100 border-orange-200";
+  else if (starting === 'Within 3 months') bgClass = "bg-amber-100 border-amber-200";
+  else if (starting === 'More than 3 months') bgClass = "bg-emerald-100 border-emerald-200";
 
   return (
     <div className={`${bgClass} rounded-2xl p-5 shadow-sm border flex flex-col gap-4`}>
