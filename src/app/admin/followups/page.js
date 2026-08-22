@@ -75,6 +75,15 @@ export default async function AdminFollowupsPage({ searchParams }) {
 
   const serializedLeads = leads.map(serializeLead);
 
+  const telecallerLeads = serializedLeads.filter(l => {
+    const lastDisp = l.dispositions && l.dispositions[l.dispositions.length - 1];
+    return !lastDisp || lastDisp.user?.role === 'TELECALLER';
+  });
+  const engineerLeads = serializedLeads.filter(l => {
+    const lastDisp = l.dispositions && l.dispositions[l.dispositions.length - 1];
+    return lastDisp && lastDisp.user?.role === 'SITE_ENGINEER';
+  });
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3 mb-6 mt-2">
@@ -103,13 +112,33 @@ export default async function AdminFollowupsPage({ searchParams }) {
         </div>
       </form>
 
-      <div className="space-y-3 mt-4">
+      <div className="space-y-6 mt-4">
         {serializedLeads.length === 0 ? (
           <div className="text-center p-8 text-slate-400">No active follow-ups found.</div>
         ) : (
-          serializedLeads.map(lead => (
-            <ManagerLeadCard key={lead.id} initialLead={lead} users={systemUsers} showCompany={!user.companyId} neutralDropdowns={true} />
-          ))
+          <>
+            {telecallerLeads.length > 0 && (
+              <div>
+                <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Recently Updated by Telecallers</h2>
+                <div className="space-y-3">
+                  {telecallerLeads.map(lead => (
+                    <ManagerLeadCard key={lead.id} initialLead={lead} users={systemUsers} showCompany={!user.companyId} neutralDropdowns={true} />
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {engineerLeads.length > 0 && (
+              <div className={telecallerLeads.length > 0 ? "mt-8" : ""}>
+                <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">Recently Updated by Site Engineers</h2>
+                <div className="space-y-3">
+                  {engineerLeads.map(lead => (
+                    <ManagerLeadCard key={lead.id} initialLead={lead} users={systemUsers} showCompany={!user.companyId} neutralDropdowns={true} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
