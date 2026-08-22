@@ -28,7 +28,7 @@ export const POST = route(async (req) => {
       leadId,
       userId: admin.id,
       type: userId ? 'LEAD_ASSIGNED' : 'LEAD_UNASSIGNED',
-      meta: userId ? { assignedTo: userId } : {}
+      meta: userId ? JSON.stringify({ assignedTo: userId }) : null
     }));
     
     if (events.length > 0) {
