@@ -3,7 +3,6 @@ import prisma from '@/lib/prisma';
 import LeadFilters from '@/components/admin/LeadFilters';
 import BulkLeadAdder from '@/components/admin/BulkLeadAdder';
 import LeadTable from '@/components/admin/LeadTable';
-import ManagerLeadCard from '@/components/manager/ManagerLeadCard';
 import { ROLE } from '@/lib/constants';
 import { normalisePhone } from '@/lib/format';
 import { getSettings, str } from '@/lib/settings';
@@ -53,10 +52,13 @@ export default async function LeadsPage({ searchParams }) {
   const settings = await getSettings();
   const tz = str(settings, 'company.timezone');
 
-  const [leads, total, recentTelecallerDisps, recentEngineerDisps, systemUsers, sources, projects, cities, companies] = await Promise.all([
+  // Only show fresh leads — not yet contacted (no disposition yet)
+  const freshWhere = { ...where, lastLeadStatus: null };
+
+  const [leads, total, systemUsers, sources, projects, cities, companies] = await Promise.all([
     prisma.lead.findMany({
-      where,
-      orderBy: [{ updatedAt: 'desc' }],
+      where: freshWhere,
+      orderBy: [{ createdAt: 'desc' }],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       include: { 
@@ -65,35 +67,7 @@ export default async function LeadsPage({ searchParams }) {
         dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
       },
     }),
-    prisma.lead.count({ where }),
-    (!params.q && page === 1) ? prisma.disposition.findMany({
-      where: { user: { role: 'TELECALLER' } },
-      orderBy: { submittedAt: 'desc' },
-      take: 25,
-      select: {
-        lead: {
-          include: { 
-            assignedTo: { select: { id: true, name: true } }, 
-            company: { select: { name: true } },
-            dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
-          }
-        }
-      }
-    }) : Promise.resolve([]),
-    (!params.q && page === 1) ? prisma.disposition.findMany({
-      where: { user: { role: 'SITE_ENGINEER' } },
-      orderBy: { submittedAt: 'desc' },
-      take: 25,
-      select: {
-        lead: {
-          include: { 
-            assignedTo: { select: { id: true, name: true } }, 
-            company: { select: { name: true } },
-            dispositions: { orderBy: { submittedAt: 'asc' }, select: { notes: true, audioBase64: true, leadStatus: true, submittedAt: true, user: { select: { name: true, role: true } } } }
-          }
-        }
-      }
-    }) : Promise.resolve([]),
+    prisma.lead.count({ where: freshWhere }),
     prisma.user.findMany({
       where: { role: { in: ['TELECALLER', 'SITE_ENGINEER'] } },
       select: { id: true, name: true, role: true, isActive: true },
@@ -122,19 +96,7 @@ export default async function LeadsPage({ searchParams }) {
     };
   }
 
-  // Deduplicate leads from dispositions
-  const extractUniqueLeads = (disps, limit) => {
-    const map = new Map();
-    disps.forEach(d => { if (!map.has(d.lead.id)) map.set(d.lead.id, d.lead); });
-    return Array.from(map.values()).slice(0, limit);
-  };
-
-  const recentlyContactedByTelecaller = extractUniqueLeads(recentTelecallerDisps, 5);
-  const recentlyContactedByEngineer = extractUniqueLeads(recentEngineerDisps, 5);
-
   const serializedLeads = leads.map(serializeLead);
-  const serializedRecentTelecaller = recentlyContactedByTelecaller.map(serializeLead);
-  const serializedRecentEngineer = recentlyContactedByEngineer.map(serializeLead);
 
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const qs = new URLSearchParams(
@@ -149,7 +111,7 @@ export default async function LeadsPage({ searchParams }) {
         <div>
           <h1 className="text-xl font-bold text-slate-900">Leads</h1>
           <p className="text-sm text-slate-500">
-            {total} matching lead{total === 1 ? '' : 's'} - every row links to its full timestamped timeline.
+            {total} fresh uncontacted lead{total === 1 ? '' : 's'} — contacted leads move to the Follow-ups tab automatically.
           </p>
         </div>
         <div className="flex gap-2">
@@ -170,37 +132,9 @@ export default async function LeadsPage({ searchParams }) {
 
       <BulkLeadAdder companies={companies} />
 
-      {serializedRecentEngineer.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Recently Updated by Site Engineers
-          </h2>
-          <div className="space-y-3">
-            {serializedRecentEngineer.map(lead => (
-              <ManagerLeadCard key={lead.id} initialLead={lead} users={systemUsers} showCompany={true} neutralDropdowns={true} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {serializedRecentTelecaller.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Recently Updated by Telecallers
-          </h2>
-          <div className="space-y-3">
-            {serializedRecentTelecaller.map(lead => (
-              <ManagerLeadCard key={lead.id} initialLead={lead} users={systemUsers} showCompany={true} neutralDropdowns={true} />
-            ))}
-          </div>
-        </div>
-      )}
-
       {total > 0 && (
         <div>
-          <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">All Leads</h2>
+          <h2 className="text-sm font-bold text-slate-800 mb-3 uppercase tracking-wide">Fresh Uncontacted Leads</h2>
           <LeadTable telecallers={telecallers} leads={serializedLeads} tz={tz} />
         </div>
       )}
